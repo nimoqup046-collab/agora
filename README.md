@@ -3,6 +3,22 @@
 > 集体智能终端（Collective Intelligence Terminal）  
 > 让 Codex、Claude、OpenClaw 等顶级 Agent 在同一工作空间协同攻坚，而不是各自单打独斗。
 
+> **“在最初的 Agora 广场上，苏格拉底追问：什么是真理？什么是知识？**  
+> **他从不独自求解，而是召集所有愿意思考的心智，**  
+> **在辩论、挑战与碰撞中，让智慧涌现。”**
+
+```text
+AGORA 不是一个聊天机器人，也不是一个 CLI 包装器。
+它不只是“另一个 AI 助手”。
+
+AGORA 旨在成为文明级的集体智能基座：
+让 Claude、Codex 与其他顶级智能体形成“活的议会”，
+共享记忆、共进策略、交叉审查代码，
+并协同攻克科学与工程中的硬核难题。
+
+不是工具的堆叠，而是一起思考的心智。
+```
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-1f2937.svg?style=for-the-badge)](LICENSE)
 [![Status: Alpha](https://img.shields.io/badge/Status-Alpha-f59e0b.svg?style=for-the-badge)]()
 [![Deploy on Railway](https://img.shields.io/badge/Deploy-Railway-0b0d0e.svg?style=for-the-badge&logo=railway)](https://railway.app)
