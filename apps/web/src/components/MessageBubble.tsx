@@ -1,8 +1,16 @@
 "use client";
 
+import { motion } from "framer-motion";
 import { AgentBadge, getAgentColor } from "./AgentBadge";
 import { clsx } from "clsx";
 import type { SessionMessage } from "@/lib/api";
+
+const AGENT_BORDER: Record<string, string> = {
+  "claude-architect": "border-l-amber-600/50",
+  "codex-implementer": "border-l-emerald-600/50",
+  "meta-conductor": "border-l-violet-500/50",
+  user: "border-l-slate-600/50",
+};
 
 interface MessageBubbleProps {
   message: SessionMessage;
@@ -10,6 +18,7 @@ interface MessageBubbleProps {
 
 export function MessageBubble({ message }: MessageBubbleProps) {
   const isUser = message.agent_id === "user";
+  const borderColor = AGENT_BORDER[message.agent_id] || "border-l-slate-600/50";
   const time = new Date(message.timestamp).toLocaleTimeString("en-US", {
     hour: "2-digit",
     minute: "2-digit",
@@ -18,25 +27,25 @@ export function MessageBubble({ message }: MessageBubbleProps) {
   });
 
   return (
-    <div
+    <motion.div
+      initial={{ opacity: 0, y: 4 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.15 }}
       className={clsx(
-        "flex flex-col gap-1 px-4 py-3 rounded-lg border",
-        isUser
-          ? "border-slate-700/50 bg-slate-800/20"
-          : "border-agora-border bg-agora-surface/60"
+        "flex flex-col gap-1 px-3 py-2.5 rounded border border-agora-border border-l-2",
+        borderColor,
+        isUser ? "bg-slate-800/20" : "bg-agora-surface/60"
       )}
     >
-      {/* Header */}
-      <div className="flex items-center gap-2 mb-1">
+      <div className="flex items-center gap-2 mb-0.5">
         <AgentBadge
           agentId={message.agent_id}
           agentName={message.agent_name}
           showDot={!isUser}
         />
-        <span className="text-slate-600 text-xs ml-auto">{time}</span>
+        <span className="text-slate-700 text-[10px] ml-auto font-mono">{time}</span>
       </div>
 
-      {/* Content */}
       <div
         className={clsx(
           "text-sm leading-relaxed whitespace-pre-wrap break-words",
@@ -45,7 +54,7 @@ export function MessageBubble({ message }: MessageBubbleProps) {
       >
         {message.content}
       </div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -56,11 +65,19 @@ interface StreamingBubbleProps {
 }
 
 export function StreamingBubble({ agentId, agentName, content }: StreamingBubbleProps) {
+  const borderColor = AGENT_BORDER[agentId] || "border-l-slate-600/50";
+
   return (
-    <div className="flex flex-col gap-1 px-4 py-3 rounded-lg border border-agora-accent/30 bg-agora-surface/60">
-      <div className="flex items-center gap-2 mb-1">
+    <div
+      className={clsx(
+        "flex flex-col gap-1 px-3 py-2.5 rounded border border-agora-accent/30 border-l-2",
+        borderColor,
+        "bg-agora-surface/60"
+      )}
+    >
+      <div className="flex items-center gap-2 mb-0.5">
         <AgentBadge agentId={agentId} agentName={agentName} showDot />
-        <span className="text-agora-accent text-xs animate-pulse">streaming...</span>
+        <span className="text-agora-accent text-[10px] animate-pulse font-mono">STREAMING</span>
       </div>
       <div
         className={clsx(
@@ -77,7 +94,7 @@ export function StreamingBubble({ agentId, agentName, content }: StreamingBubble
 
 export function TypingIndicator({ agentId, agentName }: { agentId: string; agentName: string }) {
   return (
-    <div className="flex items-center gap-3 px-4 py-2 rounded-lg border border-agora-border bg-agora-surface/40">
+    <div className="flex items-center gap-3 px-3 py-2 rounded border border-agora-border bg-agora-surface/40">
       <AgentBadge agentId={agentId} agentName={agentName} showDot />
       <div className="flex gap-1">
         {[0, 1, 2].map((i) => (

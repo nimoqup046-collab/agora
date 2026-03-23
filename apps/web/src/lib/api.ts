@@ -36,6 +36,55 @@ export interface SessionDetail extends Session {
   messages: SessionMessage[];
 }
 
+export interface DecomposeResponse {
+  session_id: string;
+  task: string;
+  subtasks: Array<{
+    id: number;
+    description: string;
+    assigned_to: string;
+    priority: number;
+    status?: string;
+  }>;
+}
+
+export interface ActResponse {
+  action_type: string;
+  agent_id: string;
+  requires_approval: boolean;
+  rationale: string;
+  output: Record<string, unknown>;
+}
+
+export interface ActConfirmResponse {
+  status: string;
+  pr_url?: string;
+  pr_number?: number;
+  branch?: string;
+  title?: string;
+  sha?: string;
+}
+
+export interface VoteRequest {
+  topic: string;
+  agent_votes: Record<string, string>;
+  rationales?: Record<string, string>;
+}
+
+export interface VoteResponse {
+  topic: string;
+  decision: string;
+  yea: number;
+  nay: number;
+  abstain: number;
+  votes: Array<{
+    agent_id: string;
+    agent_name: string;
+    option: string;
+    rationale: string;
+  }>;
+}
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${API_URL}${path}`, {
     headers: { "Content-Type": "application/json" },
@@ -92,13 +141,46 @@ export const councilApi = {
     ),
 
   decompose: (sessionId: string, task?: string) =>
-    request<{ subtasks: Array<{ id: number; description: string; assigned_to: string; priority: number }> }>(
+    request<DecomposeResponse>(
       `/council/${sessionId}/decompose`,
       {
         method: "POST",
         body: JSON.stringify({ task }),
       }
     ),
+
+  act: (
+    sessionId: string,
+    params: {
+      agent_id: string;
+      action_type: string;
+      parameters?: Record<string, unknown>;
+      rationale?: string;
+    }
+  ) =>
+    request<ActResponse>(`/council/${sessionId}/act`, {
+      method: "POST",
+      body: JSON.stringify(params),
+    }),
+
+  confirmAct: (
+    sessionId: string,
+    actionResult: Record<string, unknown>,
+    sessionConfirmId?: string
+  ) =>
+    request<ActConfirmResponse>(`/council/${sessionId}/act/confirm`, {
+      method: "POST",
+      body: JSON.stringify({
+        action_result: actionResult,
+        session_id: sessionConfirmId,
+      }),
+    }),
+
+  vote: (sessionId: string, params: VoteRequest) =>
+    request<VoteResponse>(`/council/${sessionId}/vote`, {
+      method: "POST",
+      body: JSON.stringify(params),
+    }),
 
   /**
    * Returns an SSE URL for streaming a full council round.

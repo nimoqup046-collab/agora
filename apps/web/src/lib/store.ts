@@ -5,6 +5,7 @@
 
 import { create } from "zustand";
 import type { Agent, Session, SessionMessage } from "./api";
+import type { Subtask, ActionResult, GraphNode, GraphEdge } from "@/types";
 
 export type StreamingToken = {
   agentId: string;
@@ -40,6 +41,27 @@ interface AgoraStore {
   setIsStreaming: (v: boolean) => void;
   isCreatingSession: boolean;
   setIsCreatingSession: (v: boolean) => void;
+
+  // Tasks (board mode)
+  tasks: Subtask[];
+  setTasks: (tasks: Subtask[]) => void;
+  updateTaskStatus: (id: string | number, status: Subtask["status"]) => void;
+
+  // Current action (arena mode)
+  currentAction: ActionResult | null;
+  setCurrentAction: (action: ActionResult | null) => void;
+
+  // Knowledge graph
+  graphNodes: GraphNode[];
+  graphEdges: GraphEdge[];
+  setGraphNodes: (nodes: GraphNode[]) => void;
+  setGraphEdges: (edges: GraphEdge[]) => void;
+
+  // Stats
+  memoryCount: number;
+  prCount: number;
+  setMemoryCount: (n: number) => void;
+  setPrCount: (n: number) => void;
 }
 
 export const useAgoraStore = create<AgoraStore>((set) => ({
@@ -73,4 +95,26 @@ export const useAgoraStore = create<AgoraStore>((set) => ({
   setIsStreaming: (v) => set({ isStreaming: v }),
   isCreatingSession: false,
   setIsCreatingSession: (v) => set({ isCreatingSession: v }),
+
+  tasks: [],
+  setTasks: (tasks) => set({ tasks }),
+  updateTaskStatus: (id, status) =>
+    set((state) => ({
+      tasks: state.tasks.map((t) =>
+        t.id === id ? { ...t, status } : t
+      ),
+    })),
+
+  currentAction: null,
+  setCurrentAction: (action) => set({ currentAction: action }),
+
+  graphNodes: [],
+  graphEdges: [],
+  setGraphNodes: (nodes) => set({ graphNodes: nodes }),
+  setGraphEdges: (edges) => set({ graphEdges: edges }),
+
+  memoryCount: 0,
+  prCount: 0,
+  setMemoryCount: (n) => set({ memoryCount: n }),
+  setPrCount: (n) => set({ prCount: n }),
 }));
