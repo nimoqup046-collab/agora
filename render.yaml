@@ -1,0 +1,37 @@
+services:
+  # ── Backend: FastAPI ──────────────────────────────────────────────────────
+  - type: web
+    name: agora-api
+    runtime: docker
+    dockerfilePath: ./apps/api/Dockerfile
+    dockerContext: .
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: DATABASE_URL
+        sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: API_CORS_ORIGINS
+        sync: false
+      - key: GITHUB_TOKEN
+        sync: false
+      - key: GITHUB_DEFAULT_OWNER
+        sync: false
+      - key: GITHUB_DEFAULT_REPO
+        sync: false
+
+  # ── Frontend: Next.js ─────────────────────────────────────────────────────
+  - type: web
+    name: agora-web
+    runtime: docker
+    dockerfilePath: ./apps/web/Dockerfile
+    dockerContext: ./apps/web
+    plan: free
+    envVars:
+      - key: NEXT_PUBLIC_API_URL
+        sync: false
