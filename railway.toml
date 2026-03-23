@@ -1,0 +1,31 @@
+[build]
+builder = "nixpacks"
+
+[[services]]
+name = "agora-api"
+source = "apps/api"
+
+[services.build]
+buildCommand = "pip install -r requirements.txt"
+startCommand = "uvicorn main:app --host 0.0.0.0 --port $PORT"
+
+[services.deploy]
+healthcheckPath = "/health"
+healthcheckTimeout = 30
+restartPolicyType = "on-failure"
+restartPolicyMaxRetries = 3
+
+[[services]]
+name = "agora-web"
+source = "apps/web"
+
+[services.build]
+buildCommand = "pnpm install && pnpm build"
+startCommand = "pnpm start"
+
+[services.deploy]
+healthcheckPath = "/"
+healthcheckTimeout = 30
+restartPolicyType = "on-failure"
+restartPolicyMaxRetries = 3
+
