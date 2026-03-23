@@ -14,13 +14,15 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy monorepo packages
 COPY packages/adapter /app/packages/adapter
 COPY packages/orchestrator /app/packages/orchestrator
+COPY packages/memory /app/packages/memory
 
 # Copy API source
 COPY apps/api /app/apps/api
 
 # Install local packages
 RUN pip install -e /app/packages/adapter && \
-    pip install -e /app/packages/orchestrator
+    pip install -e /app/packages/orchestrator && \
+    pip install -e /app/packages/memory
 
 # Non-root user
 RUN useradd -m -u 1000 agora && chown -R agora:agora /app

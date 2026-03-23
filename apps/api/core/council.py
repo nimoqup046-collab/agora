@@ -7,15 +7,19 @@ from __future__ import annotations
 
 import sys
 import os
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
 # Monorepo: add packages/ to path for local dev; installed in Docker
 _PKG_PATH = os.path.join(os.path.dirname(__file__), "..", "..", "..", "packages")
 if os.path.isdir(_PKG_PATH) and _PKG_PATH not in sys.path:
     sys.path.insert(0, _PKG_PATH)
 
+import asyncpg
+
 from adapter import ClaudeAdapter, CodexAdapter, MetaAgent, IAgent
+from adapter.github_client import GitHubClient
 from orchestrator.session import SessionStore, Session
+from orchestrator.session_postgres import PostgresSessionStore
 from orchestrator.turn_engine import TurnEngine, TurnStrategy
 from orchestrator.consensus import ConsensusEngine
 
@@ -24,21 +28,63 @@ from .config import settings
 
 class CouncilManager:
     """
-    Manages the agent registry and session store for the AGORA council.
+    Manages the agent registry, session store, memory, and GitHub client.
     """
 
     def __init__(self):
         self._agents: dict[str, IAgent] = {}
-        self.sessions = SessionStore()
+        self.sessions: SessionStore | PostgresSessionStore = SessionStore()
         self.consensus = ConsensusEngine()
+        self.memory = None       # Set in initialize() when pool available
+        self.github: Optional[GitHubClient] = None
         self._initialized = False
 
-    def initialize(self) -> None:
-        """Boot the council: register default agents."""
+    def initialize(self, pool: Optional[asyncpg.Pool] = None) -> None:
+        """
+        Boot the council.
+        - If pool is provided: use PostgresSessionStore + MemoryManager
+        - Otherwise: in-memory fallback (local dev / tests)
+        """
         if self._initialized:
             return
 
-        # Register Claude as Architect
+        # ── Session store ──────────────────────────────────────────────────
+        if pool:
+            self.sessions = PostgresSessionStore(pool)
+        else:
+            self.sessions = SessionStore()
+
+        # ── Memory manager (lazy import to avoid hard dep if no pool) ──────
+        if pool and settings.openai_api_key:
+            try:
+                from memory.memory_manager import MemoryManager
+                from memory.redis_memory import RedisWorkingMemory
+                from memory.episodic_memory import EpisodicMemory
+                import redis.asyncio as aioredis
+                from openai import AsyncOpenAI
+
+                redis_client = aioredis.from_url(
+                    f"redis://{settings.redis_host}:{settings.redis_port}",
+                    password=settings.redis_password or None,
+                    decode_responses=False,
+                )
+                openai_client = AsyncOpenAI(api_key=settings.openai_api_key)
+                working_mem = RedisWorkingMemory(redis_client)
+                episodic_mem = EpisodicMemory(pool, openai_client)
+                self.memory = MemoryManager(working_mem, episodic_mem)
+            except Exception as e:
+                print(f"[council] Memory init failed: {e} — running without memory")
+                self.memory = None
+
+        # ── GitHub client ──────────────────────────────────────────────────
+        if settings.github_token and settings.github_default_owner:
+            self.github = GitHubClient(
+                token=settings.github_token,
+                owner=settings.github_default_owner,
+                repo=settings.github_default_repo,
+            )
+
+        # ── Agents ─────────────────────────────────────────────────────────
         claude = ClaudeAdapter(
             agent_id="claude-architect",
             name="Claude",
@@ -47,7 +93,6 @@ class CouncilManager:
         )
         self._agents[claude.agent_id] = claude
 
-        # Register Codex as Implementer
         codex = CodexAdapter(
             agent_id="codex-implementer",
             name="Codex",
@@ -56,7 +101,6 @@ class CouncilManager:
         )
         self._agents[codex.agent_id] = codex
 
-        # Register Meta-Agent as Conductor
         meta = MetaAgent(
             agent_id="meta-conductor",
             name="Meta-Agent",

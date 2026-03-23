@@ -25,6 +25,7 @@ class SessionStatus(str, enum.Enum):
 @dataclass
 class SessionMessage:
     id: str = field(default_factory=lambda: str(uuid.uuid4()))
+    session_id: str = ""
     agent_id: str = ""
     agent_name: str = ""
     content: str = ""
@@ -34,6 +35,7 @@ class SessionMessage:
     def to_dict(self) -> dict:
         return {
             "id": self.id,
+            "session_id": self.session_id,
             "agent_id": self.agent_id,
             "agent_name": self.agent_name,
             "content": self.content,
@@ -62,6 +64,7 @@ class Session:
         metadata: Optional[dict] = None,
     ) -> SessionMessage:
         msg = SessionMessage(
+            session_id=self.id,
             agent_id=agent_id,
             agent_name=agent_name,
             content=content,
@@ -107,14 +110,16 @@ class Session:
 
 class SessionStore:
     """
-    In-memory session store for Phase 1.
-    Will be replaced with Redis + PostgreSQL in Phase 2.
+    In-memory session store — fallback when DB is unavailable (local dev / tests).
+    PostgresSessionStore is the production default.
+
+    Both stores share the same async interface so routers can treat them uniformly.
     """
 
     def __init__(self):
         self._sessions: dict[str, Session] = {}
 
-    def create(self, title: str, task: str, participant_ids: list[str]) -> Session:
+    async def create(self, title: str, task: str, participant_ids: list[str]) -> Session:
         session = Session(
             title=title,
             task=task,
@@ -124,13 +129,26 @@ class SessionStore:
         self._sessions[session.id] = session
         return session
 
-    def get(self, session_id: str) -> Optional[Session]:
+    async def get(self, session_id: str) -> Optional[Session]:
         return self._sessions.get(session_id)
 
-    def list_all(self) -> list[Session]:
+    async def list_all(self) -> list[Session]:
         return list(self._sessions.values())
 
-    def update_status(self, session_id: str, status: SessionStatus) -> bool:
+    async def add_message(
+        self,
+        session_id: str,
+        agent_id: str,
+        agent_name: str,
+        content: str,
+        metadata: Optional[dict] = None,
+    ) -> Optional[SessionMessage]:
+        session = self._sessions.get(session_id)
+        if not session:
+            return None
+        return session.add_message(agent_id, agent_name, content, metadata)
+
+    async def update_status(self, session_id: str, status: SessionStatus) -> bool:
         session = self._sessions.get(session_id)
         if not session:
             return False
@@ -138,5 +156,5 @@ class SessionStore:
         session.updated_at = datetime.now(timezone.utc)
         return True
 
-    def delete(self, session_id: str) -> bool:
+    async def delete(self, session_id: str) -> bool:
         return self._sessions.pop(session_id, None) is not None

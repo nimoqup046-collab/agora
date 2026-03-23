@@ -15,15 +15,24 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from .core.config import settings
 from .core.council import council
+from .core.db import get_pool, close_pool, run_migrations
 from .routers import agents, sessions, council as council_router
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Startup: initialize the agent council
-    council.initialize()
+    # Startup: database pool → migrations → council
+    try:
+        pool = await get_pool()
+        await run_migrations(pool)
+        council.initialize(pool=pool)
+    except Exception as e:
+        # Degrade gracefully: in-memory mode if DB unavailable
+        print(f"[startup] DB unavailable ({e}), running in-memory mode")
+        council.initialize(pool=None)
     yield
-    # Shutdown: nothing to clean up in Phase 1 (in-memory)
+    # Shutdown
+    await close_pool()
 
 
 app = FastAPI(
