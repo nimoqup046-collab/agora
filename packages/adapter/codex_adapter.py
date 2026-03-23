@@ -43,6 +43,7 @@ When reviewing others' ideas, focus on practical implementability."""
         model: str = "gpt-4o",
         api_key: Optional[str] = None,
         max_tokens: int = 4096,
+        base_url: Optional[str] = None,
     ):
         super().__init__(
             agent_id=agent_id,
@@ -58,7 +59,8 @@ When reviewing others' ideas, focus on practical implementability."""
         self.model = model
         self.max_tokens = max_tokens
         self._client = AsyncOpenAI(
-            api_key=api_key or os.environ.get("OPENAI_API_KEY", "")
+            api_key=api_key or os.environ.get("OPENAI_API_KEY", ""),
+            base_url=base_url or None,
         )
         self._is_active = True
 

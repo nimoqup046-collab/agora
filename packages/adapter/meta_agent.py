@@ -21,6 +21,7 @@ from .base import (
     MessageRole,
 )
 from .claude_adapter import ClaudeAdapter
+from .codex_adapter import CodexAdapter
 
 
 CONDUCTOR_SYSTEM_PROMPT = """You are the Meta-Agent — the conductor of the AGORA intelligence council.
@@ -49,6 +50,7 @@ class MetaAgent(IAgent):
         name: str = "Meta-Agent",
         model: str = "claude-sonnet-4-6",
         api_key: Optional[str] = None,
+        base_url: Optional[str] = None,
     ):
         super().__init__(
             agent_id=agent_id,
@@ -61,14 +63,26 @@ class MetaAgent(IAgent):
             ],
             system_prompt=CONDUCTOR_SYSTEM_PROMPT,
         )
-        self._backend = ClaudeAdapter(
-            agent_id=f"{agent_id}-backend",
-            name="Meta-Backend",
-            role=AgentRole.CONDUCTOR,
-            system_prompt=CONDUCTOR_SYSTEM_PROMPT,
-            model=model,
-            api_key=api_key,
-        )
+        # Use OpenAI-compatible backend (e.g. DeepSeek) when base_url is provided
+        if base_url:
+            self._backend = CodexAdapter(
+                agent_id=f"{agent_id}-backend",
+                name="Meta-Backend",
+                role=AgentRole.CONDUCTOR,
+                system_prompt=CONDUCTOR_SYSTEM_PROMPT,
+                model=model,
+                api_key=api_key,
+                base_url=base_url,
+            )
+        else:
+            self._backend = ClaudeAdapter(
+                agent_id=f"{agent_id}-backend",
+                name="Meta-Backend",
+                role=AgentRole.CONDUCTOR,
+                system_prompt=CONDUCTOR_SYSTEM_PROMPT,
+                model=model,
+                api_key=api_key,
+            )
         self._is_active = True
 
     async def think(
