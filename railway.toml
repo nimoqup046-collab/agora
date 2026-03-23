@@ -2,7 +2,7 @@
 builder = "dockerfile"
 
 # ── API Service ───────────────────────────────────────────────────────────────
-# Built from repo root so it can access packages/adapter + packages/orchestrator
+# Built from repo root so it can access packages/adapter + packages/orchestrator + packages/memory
 [[services]]
 name = "agora-api"
 source = "."
@@ -18,12 +18,13 @@ restartPolicyType = "on-failure"
 restartPolicyMaxRetries = 3
 
 # ── Web Service ───────────────────────────────────────────────────────────────
+# Built from apps/web with standalone Next.js output
 [[services]]
 name = "agora-web"
 source = "apps/web"
 
 [services.build]
-dockerfilePath = "Dockerfile"
+dockerfilePath = "apps/web/Dockerfile"
 dockerContext = "apps/web"
 
 [services.deploy]

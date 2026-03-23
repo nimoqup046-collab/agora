@@ -63,9 +63,10 @@ class CouncilManager:
                 import redis.asyncio as aioredis
                 from openai import AsyncOpenAI
 
+                redis_url = os.getenv("REDIS_URL") or f"redis://{settings.redis_host}:{settings.redis_port}"
                 redis_client = aioredis.from_url(
-                    f"redis://{settings.redis_host}:{settings.redis_port}",
-                    password=settings.redis_password or None,
+                    redis_url,
+                    password=settings.redis_password or None if not os.getenv("REDIS_URL") else None,
                     decode_responses=False,
                 )
                 openai_client = AsyncOpenAI(api_key=settings.openai_api_key)

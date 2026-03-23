@@ -33,40 +33,19 @@ services:
       timeout: 5s
       retries: 5
 
-  neo4j:
-    image: neo4j:5.18-community
-    container_name: agora-neo4j
-    restart: unless-stopped
-    environment:
-      NEO4J_AUTH: neo4j/changeme_in_production
-      NEO4J_PLUGINS: '["apoc"]'
-    ports:
-      - "7474:7474"
-      - "7687:7687"
-    volumes:
-      - neo4j_data:/data
-    healthcheck:
-      test: ["CMD", "neo4j", "status"]
-      interval: 30s
-      timeout: 10s
-      retries: 5
-
   api:
     build:
-      context: ./apps/api
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: apps/api/Dockerfile
     container_name: agora-api
     restart: unless-stopped
     env_file:
       - .env
     environment:
-      POSTGRES_HOST: postgres
-      REDIS_HOST: redis
-      NEO4J_URI: bolt://neo4j:7687
+      DATABASE_URL: postgresql://agora:changeme_in_production@postgres:5432/agora
+      REDIS_URL: redis://redis:6379
     ports:
       - "8000:8000"
-    volumes:
-      - ./apps/api:/app
     depends_on:
       postgres:
         condition: service_healthy
@@ -84,22 +63,13 @@ services:
       dockerfile: Dockerfile
     container_name: agora-web
     restart: unless-stopped
-    env_file:
-      - .env
     environment:
-      NEXT_PUBLIC_API_URL: http://localhost:8000
+      NEXT_PUBLIC_API_URL: http://api:8000
     ports:
       - "3000:3000"
-    volumes:
-      - ./apps/web:/app
-      - /app/node_modules
-      - /app/.next
     depends_on:
       - api
 
 volumes:
   postgres_data:
   redis_data:
-  neo4j_data:
-
----
