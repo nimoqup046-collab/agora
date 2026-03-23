@@ -86,27 +86,51 @@ class CouncilManager:
             )
 
         # ── Agents ─────────────────────────────────────────────────────────
-        claude = ClaudeAdapter(
-            agent_id="claude-architect",
-            name="Claude",
-            model=settings.default_model_claude,
-            api_key=settings.anthropic_api_key or None,
+        # Priority: OpenRouter > DeepSeek > Anthropic/OpenAI
+        _compat_key = (
+            settings.openrouter_api_key
+            or settings.deepseek_api_key
+            or None
         )
+        _compat_url = (
+            "https://openrouter.ai/api/v1" if settings.openrouter_api_key
+            else "https://api.deepseek.com" if settings.deepseek_api_key
+            else None
+        )
+
+        if _compat_key:
+            # OpenAI-compatible mode (OpenRouter / DeepSeek)
+            claude = CodexAdapter(
+                agent_id="claude-architect",
+                name="Claude",
+                model=settings.default_model_claude,
+                api_key=_compat_key,
+                base_url=_compat_url,
+            )
+        else:
+            claude = ClaudeAdapter(
+                agent_id="claude-architect",
+                name="Claude",
+                model=settings.default_model_claude,
+                api_key=settings.anthropic_api_key or None,
+            )
         self._agents[claude.agent_id] = claude
 
         codex = CodexAdapter(
             agent_id="codex-implementer",
             name="Codex",
             model=settings.default_model_codex,
-            api_key=settings.openai_api_key or None,
+            api_key=_compat_key or settings.openai_api_key or None,
+            base_url=_compat_url,
         )
         self._agents[codex.agent_id] = codex
 
         meta = MetaAgent(
             agent_id="meta-conductor",
             name="Meta-Agent",
-            model="claude-sonnet-4-6",
-            api_key=settings.anthropic_api_key or None,
+            model=settings.default_model_meta,
+            api_key=_compat_key or settings.anthropic_api_key or None,
+            base_url=_compat_url,
         )
         self._agents[meta.agent_id] = meta
 

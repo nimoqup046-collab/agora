@@ -8,9 +8,20 @@ services:
     plan: free
     healthCheckPath: /health
     envVars:
+      # 三选一：OPENROUTER_API_KEY（推荐）/ DEEPSEEK_API_KEY / ANTHROPIC+OPENAI
+      - key: OPENROUTER_API_KEY
+        sync: false
+      - key: DEEPSEEK_API_KEY
+        sync: false
       - key: ANTHROPIC_API_KEY
         sync: false
       - key: OPENAI_API_KEY
+        sync: false
+      - key: DEFAULT_MODEL_CLAUDE
+        sync: false
+      - key: DEFAULT_MODEL_CODEX
+        sync: false
+      - key: DEFAULT_MODEL_META
         sync: false
       - key: DATABASE_URL
         sync: false

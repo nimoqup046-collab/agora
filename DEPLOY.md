@@ -46,9 +46,36 @@
    - `agora-web`
 5. 点击 **Apply** 开始创建
 
-### 3.2 配置 agora-api 环境变量
+### 3.2 获取 AI API Key（二选一）
+
+**国内用户 → DeepSeek（推荐）**
+1. 打开 https://platform.deepseek.com，注册账号（国内可访问，注册送免费额度）
+2. 进入 **API Keys** → 创建新 Key，格式：`sk-xxxxxxxx`
+3. 保存备用
+
+**海外用户 → Anthropic + OpenAI**
+- Anthropic Key：https://console.anthropic.com
+- OpenAI Key：https://platform.openai.com
+
+---
+
+### 3.3 配置 agora-api 环境变量
 
 进入 `agora-api` 服务 → **Environment** 选项卡，填入以下变量：
+
+**国内用户（DeepSeek）：**
+
+| 变量名 | 值 |
+|---|---|
+| `DEEPSEEK_API_KEY` | 上面拿到的 DeepSeek Key（必填） |
+| `DEFAULT_MODEL_CLAUDE` | `deepseek-chat` |
+| `DEFAULT_MODEL_CODEX` | `deepseek-chat` |
+| `DEFAULT_MODEL_META` | `deepseek-chat` |
+| `DATABASE_URL` | 第一步从 Neon 复制的连接串（必填） |
+| `REDIS_URL` | 第二步从 Upstash 复制的连接串（必填） |
+| `API_CORS_ORIGINS` | 暂时填 `http://localhost:3000`，等 agora-web 部署后更新 |
+
+**海外用户（Anthropic + OpenAI）：**
 
 | 变量名 | 值 |
 |---|---|
@@ -57,9 +84,8 @@
 | `DATABASE_URL` | 第一步从 Neon 复制的连接串（必填） |
 | `REDIS_URL` | 第二步从 Upstash 复制的连接串（必填） |
 | `API_CORS_ORIGINS` | 暂时填 `http://localhost:3000`，等 agora-web 部署后更新 |
-| `GITHUB_TOKEN` | GitHub Personal Access Token（可选，用于 PR 功能） |
-| `GITHUB_DEFAULT_OWNER` | GitHub 用户名或组织名（可选） |
-| `GITHUB_DEFAULT_REPO` | 目标仓库名（可选） |
+
+（GitHub 相关变量可选，用于 PR 自动化功能）
 
 填完后点击 **Save Changes**，服务会自动重新部署。
 
