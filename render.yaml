@@ -8,33 +8,18 @@ services:
     plan: free
     healthCheckPath: /health
     envVars:
-      # 三选一：OPENROUTER_API_KEY（推荐）/ DEEPSEEK_API_KEY / ANTHROPIC+OPENAI
-      - key: OPENROUTER_API_KEY
+      - key: DATABASE_URL
         sync: false
       - key: DEEPSEEK_API_KEY
         sync: false
-      - key: ANTHROPIC_API_KEY
-        sync: false
-      - key: OPENAI_API_KEY
-        sync: false
       - key: DEFAULT_MODEL_CLAUDE
-        sync: false
+        value: deepseek-chat
       - key: DEFAULT_MODEL_CODEX
-        sync: false
+        value: deepseek-chat
       - key: DEFAULT_MODEL_META
-        sync: false
-      - key: DATABASE_URL
-        sync: false
-      - key: REDIS_URL
-        sync: false
-      - key: API_CORS_ORIGINS
-        sync: false
-      - key: GITHUB_TOKEN
-        sync: false
-      - key: GITHUB_DEFAULT_OWNER
-        sync: false
-      - key: GITHUB_DEFAULT_REPO
-        sync: false
+        value: deepseek-chat
+      - key: LOG_LEVEL
+        value: info
 
   # ── Frontend: Next.js ─────────────────────────────────────────────────────
   - type: web
