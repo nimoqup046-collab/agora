@@ -12,8 +12,10 @@ class Settings(BaseSettings):
     log_level: str = "INFO"
 
     # API Keys
+    # 国内用户：只填 deepseek_api_key，其他两个可留空
     anthropic_api_key: str = ""
     openai_api_key: str = ""
+    deepseek_api_key: str = ""
 
     # Database
     postgres_host: str = "localhost"
@@ -41,8 +43,9 @@ class Settings(BaseSettings):
     api_cors_origins: str = "http://localhost:3000"
 
     # Council defaults
-    default_model_claude: str = "claude-opus-4-6"
-    default_model_codex: str = "gpt-4o"
+    default_model_claude: str = "claude-opus-4-6"   # or deepseek-chat
+    default_model_codex: str = "gpt-4o"             # or deepseek-chat
+    default_model_meta: str = "claude-sonnet-4-6"   # or deepseek-chat
     max_turns_per_session: int = 20
     session_timeout_seconds: int = 3600
 
