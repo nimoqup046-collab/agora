@@ -37,6 +37,9 @@ class Settings(BaseSettings):
     github_default_owner: str = ""
     github_default_repo: str = ""
 
+    # API / CORS
+    api_cors_origins: str = "http://localhost:3000"
+
     # Council defaults
     default_model_claude: str = "claude-opus-4-6"
     default_model_codex: str = "gpt-4o"

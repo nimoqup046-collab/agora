@@ -43,13 +43,11 @@ app = FastAPI(
 )
 
 # CORS — allow the Next.js frontend and local dev
+_cors_origins = [o.strip() for o in (settings.api_cors_origins or "").split(",") if o.strip()]
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "https://*.railway.app",
-        "https://*.vercel.app",
-    ],
+    allow_origins=_cors_origins or ["http://localhost:3000"],
+    allow_origin_regex=r"https://.*\.(railway\.app|vercel\.app)$",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
