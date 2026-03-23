@@ -8,7 +8,9 @@ services:
     plan: free
     healthCheckPath: /health
     envVars:
-      # 国内用户只填 DEEPSEEK_API_KEY；海外用户填 ANTHROPIC_API_KEY + OPENAI_API_KEY
+      # 三选一：OPENROUTER_API_KEY（推荐）/ DEEPSEEK_API_KEY / ANTHROPIC+OPENAI
+      - key: OPENROUTER_API_KEY
+        sync: false
       - key: DEEPSEEK_API_KEY
         sync: false
       - key: ANTHROPIC_API_KEY

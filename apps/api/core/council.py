@@ -86,17 +86,26 @@ class CouncilManager:
             )
 
         # ── Agents ─────────────────────────────────────────────────────────
-        # DeepSeek mode: use OpenAI-compatible API for all agents (China-accessible)
-        _deepseek_key = settings.deepseek_api_key or None
-        _deepseek_url = "https://api.deepseek.com" if _deepseek_key else None
+        # Priority: OpenRouter > DeepSeek > Anthropic/OpenAI
+        _compat_key = (
+            settings.openrouter_api_key
+            or settings.deepseek_api_key
+            or None
+        )
+        _compat_url = (
+            "https://openrouter.ai/api/v1" if settings.openrouter_api_key
+            else "https://api.deepseek.com" if settings.deepseek_api_key
+            else None
+        )
 
-        if _deepseek_key:
+        if _compat_key:
+            # OpenAI-compatible mode (OpenRouter / DeepSeek)
             claude = CodexAdapter(
                 agent_id="claude-architect",
                 name="Claude",
                 model=settings.default_model_claude,
-                api_key=_deepseek_key,
-                base_url=_deepseek_url,
+                api_key=_compat_key,
+                base_url=_compat_url,
             )
         else:
             claude = ClaudeAdapter(
@@ -111,8 +120,8 @@ class CouncilManager:
             agent_id="codex-implementer",
             name="Codex",
             model=settings.default_model_codex,
-            api_key=_deepseek_key or settings.openai_api_key or None,
-            base_url=_deepseek_url,
+            api_key=_compat_key or settings.openai_api_key or None,
+            base_url=_compat_url,
         )
         self._agents[codex.agent_id] = codex
 
@@ -120,8 +129,8 @@ class CouncilManager:
             agent_id="meta-conductor",
             name="Meta-Agent",
             model=settings.default_model_meta,
-            api_key=_deepseek_key or settings.anthropic_api_key or None,
-            base_url=_deepseek_url,
+            api_key=_compat_key or settings.anthropic_api_key or None,
+            base_url=_compat_url,
         )
         self._agents[meta.agent_id] = meta
 

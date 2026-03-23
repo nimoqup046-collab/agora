@@ -11,11 +11,11 @@ class Settings(BaseSettings):
     debug: bool = False
     log_level: str = "INFO"
 
-    # API Keys
-    # 国内用户：只填 deepseek_api_key，其他两个可留空
+    # API Keys（优先级：openrouter > deepseek > anthropic/openai）
+    openrouter_api_key: str = ""
+    deepseek_api_key: str = ""
     anthropic_api_key: str = ""
     openai_api_key: str = ""
-    deepseek_api_key: str = ""
 
     # Database
     postgres_host: str = "localhost"
