@@ -157,3 +157,9 @@ pnpm dev
 ## 许可协议
 
 MIT License.
+
+## 下一步执行文档（Phase 0）
+
+- 可行性与市场评估：`docs/research/2026-03-23-feasibility-and-market.md`
+- MVP 技术蓝图：`docs/architecture/mvp-blueprint-v1.md`
+- 模块与里程碑：`docs/product/mvp-modules-and-milestones.md`

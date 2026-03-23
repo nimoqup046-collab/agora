@@ -1,0 +1,11 @@
+﻿{
+  "name": "agora",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@10.0.0",
+  "scripts": {
+    "dev": "echo \"Start services with docker compose up -d\"",
+    "lint": "echo \"No lints configured yet\"",
+    "test": "echo \"No tests configured yet\""
+  }
+}
