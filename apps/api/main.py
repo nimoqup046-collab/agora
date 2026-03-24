@@ -16,7 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from .core.config import settings
 from .core.council import council
 from .core.db import get_pool, close_pool, run_migrations
-from .routers import agents, sessions, council as council_router, evolution as evolution_router
+from .routers import agents, sessions, council as council_router, evolution as evolution_router, skills as skills_router
 
 
 @asynccontextmanager
@@ -59,6 +59,7 @@ app.include_router(agents.router)
 app.include_router(sessions.router)
 app.include_router(council_router.router)
 app.include_router(evolution_router.router)
+app.include_router(skills_router.router)
 
 
 @app.get("/health")

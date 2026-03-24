@@ -218,6 +218,87 @@ export const evolutionApi = {
     ),
 };
 
+// ── Skills ────────────────────────────────────────────────────────────────────
+
+export interface Skill {
+  id: string;
+  name: string;
+  description: string;
+  domain: string;
+  template: string;
+  examples: Array<{ input: string; output: string }>;
+  agent_scope: string[] | null;
+  source_session_ids: string[];
+  created_by_agent_id: string;
+  usage_count: number;
+  success_count: number;
+  success_rate: number;
+  version: number;
+  parent_skill_id: string | null;
+  approved_at: string | null;
+  approved_by: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateSkillParams {
+  name: string;
+  description: string;
+  domain: string;
+  template: string;
+  examples?: Array<{ input: string; output: string }>;
+  agent_scope?: string[] | null;
+  source_session_ids?: string[];
+  created_by_agent_id?: string;
+}
+
+export const skillsApi = {
+  list: (params?: { domain?: string; agent_id?: string; approved_only?: boolean }) => {
+    const qs = new URLSearchParams();
+    if (params?.domain) qs.set("domain", params.domain);
+    if (params?.agent_id) qs.set("agent_id", params.agent_id);
+    if (params?.approved_only) qs.set("approved_only", "true");
+    return request<{ skills: Skill[]; total: number }>(`/skills/${qs.toString() ? `?${qs}` : ""}`);
+  },
+
+  get: (skillId: string) =>
+    request<{ skill: Skill }>(`/skills/${skillId}`).then((r) => r.skill),
+
+  create: (params: CreateSkillParams) =>
+    request<{ skill: Skill; embedded: boolean }>("/skills/", {
+      method: "POST",
+      body: JSON.stringify(params),
+    }),
+
+  approve: (skillId: string) =>
+    request<{ skill: Skill; activated: boolean }>(`/skills/${skillId}/approve`, {
+      method: "POST",
+    }),
+
+  delete: (skillId: string) =>
+    request<{ deleted: boolean; skill_id: string }>(`/skills/${skillId}`, {
+      method: "DELETE",
+    }),
+
+  search: (query: string, agentId?: string, limit = 3) =>
+    request<{ results: Array<{ skill: Skill; similarity: number }>; query: string }>(
+      "/skills/search",
+      {
+        method: "POST",
+        body: JSON.stringify({ query, agent_id: agentId, limit }),
+      }
+    ),
+
+  feedback: (skillId: string, positive: boolean) =>
+    request<{ recorded: boolean; positive: boolean; skill_id: string }>(
+      `/skills/${skillId}/feedback`,
+      {
+        method: "POST",
+        body: JSON.stringify({ positive }),
+      }
+    ),
+};
+
 // ── Health ────────────────────────────────────────────────────────────────────
 
 export const healthApi = {

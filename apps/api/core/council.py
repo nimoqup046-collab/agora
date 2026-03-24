@@ -38,6 +38,7 @@ class CouncilManager:
         self.memory = None       # Set in initialize() when pool available
         self.github: Optional[GitHubClient] = None
         self.souls = None        # SoulStore — set in initialize() when pool available
+        self.skills = None       # SkillStore — set in initialize() when pool available
         self.evolutor: Optional[EvolutorAgent] = None
         self._initialized = False
 
@@ -55,6 +56,25 @@ class CouncilManager:
             self.sessions = PostgresSessionStore(pool)
         else:
             self.sessions = SessionStore()
+
+        # ── Soul store (Evolution Engine) ─────────────────────────────────
+        if pool:
+            try:
+                from orchestrator.soul_store import SoulStore
+                self.souls = SoulStore(pool)
+            except Exception as e:
+                print(f"[council] SoulStore init failed: {e}")
+                self.souls = None
+
+        # ── Skill store (Skill Library) — init before MemoryManager ───────
+        if pool:
+            try:
+                from orchestrator.skill_store import SkillStore
+                self.skills = SkillStore(pool)
+                print("[council] SkillStore initialized")
+            except Exception as e:
+                print(f"[council] SkillStore init failed: {e}")
+                self.skills = None
 
         # ── Memory manager (lazy import to avoid hard dep if no pool) ──────
         if pool and settings.openai_api_key:
@@ -74,19 +94,11 @@ class CouncilManager:
                 openai_client = AsyncOpenAI(api_key=settings.openai_api_key)
                 working_mem = RedisWorkingMemory(redis_client)
                 episodic_mem = EpisodicMemory(pool, openai_client)
-                self.memory = MemoryManager(working_mem, episodic_mem)
+                # Pass skill_store so MemoryManager can retrieve skills in recall()
+                self.memory = MemoryManager(working_mem, episodic_mem, self.skills)
             except Exception as e:
                 print(f"[council] Memory init failed: {e} — running without memory")
                 self.memory = None
-
-        # ── Soul store (Evolution Engine) ─────────────────────────────────
-        if pool:
-            try:
-                from orchestrator.soul_store import SoulStore
-                self.souls = SoulStore(pool)
-            except Exception as e:
-                print(f"[council] SoulStore init failed: {e}")
-                self.souls = None
 
         # ── GitHub client ──────────────────────────────────────────────────
         if settings.github_token and settings.github_default_owner:

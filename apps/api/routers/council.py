@@ -79,21 +79,28 @@ async def _enrich_with_memory(
     session_id: str,
     agent_id: str,
     query: str,
-) -> list[AgentMessage]:
+) -> tuple[list[AgentMessage], list[str]]:
     """
-    Retrieve memory context and return as a SYSTEM message list.
-    Returns empty list if memory is not available.
+    Retrieve memory context (episodic + skills) and return as a SYSTEM message list.
+    Returns (messages, skill_ids_used) — skill_ids used for usage tracking.
     """
     if not council.memory:
-        return []
+        return [], []
     try:
         ctx = await council.memory.recall(session_id, agent_id, query)
         if ctx.is_empty():
-            return []
+            return [], []
         system_text = ctx.to_system_prompt()
-        return [AgentMessage(role=MessageRole.SYSTEM, content=system_text)]
+        return [AgentMessage(role=MessageRole.SYSTEM, content=system_text)], ctx.active_skill_ids()
     except Exception:
-        return []
+        return [], []
+
+
+def _fire_skill_usage(skill_ids: list[str]) -> None:
+    """Fire-and-forget: increment usage_count for each skill that was injected."""
+    if council.skills and skill_ids:
+        for sid in skill_ids:
+            asyncio.create_task(council.skills.increment_usage(sid))
 
 
 def _fire_memory_store(session_id: str, agent_id: str, content: str) -> None:
@@ -139,10 +146,10 @@ async def send_message(session_id: str, body: UserMessage):
     # Record user message
     await council.sessions.add_message(session_id, "user", "User", body.content)
 
-    # Build history + memory context
+    # Build history + memory context (includes skills)
     session = await council.sessions.get(session_id)
     history = session.get_history_for_agent(agent_id)
-    memory_msgs = await _enrich_with_memory(session_id, agent_id, body.content)
+    memory_msgs, skill_ids = await _enrich_with_memory(session_id, agent_id, body.content)
     messages = memory_msgs + _build_agent_messages(history)
 
     try:
@@ -155,6 +162,7 @@ async def send_message(session_id: str, body: UserMessage):
         response.content, response.metadata,
     )
     _fire_memory_store(session_id, agent.agent_id, response.content)
+    _fire_skill_usage(skill_ids)
 
     return {
         "message_id": msg.id,
@@ -191,7 +199,7 @@ async def stream_round(session_id: str, user_message: str, turns: int = 1):
             # Fetch fresh session state (messages may have grown)
             current_session = await council.sessions.get(session_id)
             history = current_session.get_history_for_agent(turn.agent_id)
-            memory_msgs = await _enrich_with_memory(session_id, turn.agent_id, user_message)
+            memory_msgs, skill_ids = await _enrich_with_memory(session_id, turn.agent_id, user_message)
             messages = memory_msgs + _build_agent_messages(history)
 
             yield {
@@ -228,6 +236,7 @@ async def stream_round(session_id: str, user_message: str, turns: int = 1):
                 session_id, agent.agent_id, agent.name, complete
             )
             _fire_memory_store(session_id, agent.agent_id, complete)
+            _fire_skill_usage(skill_ids)
 
             yield {
                 "data": json.dumps(
@@ -266,7 +275,7 @@ async def run_round(session_id: str, body: UserMessage):
 
         current_session = await council.sessions.get(session_id)
         history = current_session.get_history_for_agent(turn.agent_id)
-        memory_msgs = await _enrich_with_memory(session_id, turn.agent_id, body.content)
+        memory_msgs, skill_ids = await _enrich_with_memory(session_id, turn.agent_id, body.content)
         messages = memory_msgs + _build_agent_messages(history)
 
         try:
@@ -276,6 +285,7 @@ async def run_round(session_id: str, body: UserMessage):
                 response.content, response.metadata,
             )
             _fire_memory_store(session_id, agent.agent_id, response.content)
+            _fire_skill_usage(skill_ids)
             responses.append({
                 "agent_id": agent.agent_id,
                 "agent_name": agent.name,

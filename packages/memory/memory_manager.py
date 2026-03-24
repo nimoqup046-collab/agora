@@ -4,6 +4,7 @@ MemoryManager — Unified facade over all memory tiers.
 Orchestrates:
   - RedisWorkingMemory  (hot: current-session context, milliseconds)
   - EpisodicMemory      (warm: cross-session semantic recall, seconds)
+  - SkillStore          (cool: reusable reasoning patterns, semantic search)
 
 Usage in council router:
   1. Before agent.think_stream():  ctx = await memory.recall(...)
@@ -14,9 +15,13 @@ Usage in council router:
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import TYPE_CHECKING
 
 from .redis_memory import RedisWorkingMemory
 from .episodic_memory import EpisodicMemory, MemoryResult
+
+if TYPE_CHECKING:
+    from orchestrator.skill_store import SkillResult
 
 
 @dataclass
@@ -27,9 +32,10 @@ class MemoryContext:
     """
     working: list[dict] = field(default_factory=list)
     episodic: list[MemoryResult] = field(default_factory=list)
+    skills: list["SkillResult"] = field(default_factory=list)
 
     def is_empty(self) -> bool:
-        return not self.working and not self.episodic
+        return not self.working and not self.episodic and not self.skills
 
     def to_system_prompt(self) -> str:
         """
@@ -38,6 +44,11 @@ class MemoryContext:
         """
         parts = []
 
+        if self.skills:
+            parts.append("=== Applicable skills from library ===")
+            for r in self.skills:
+                parts.append(r.skill.to_context_fragment())
+
         if self.episodic:
             parts.append("=== Relevant memories from past sessions ===")
             for r in self.episodic:
@@ -45,6 +56,10 @@ class MemoryContext:
                 parts.append(f"[{r.agent_id} · sim:{sim_pct}%] {r.content}")
 
         return "\n".join(parts) if parts else ""
+
+    def active_skill_ids(self) -> list[str]:
+        """Return IDs of skills injected, for usage tracking."""
+        return [r.skill.id for r in self.skills]
 
 
 # Minimum importance to store in episodic memory
@@ -55,7 +70,7 @@ _DEFAULT_IMPORTANCE = 0.5
 
 class MemoryManager:
     """
-    Facade over RedisWorkingMemory + EpisodicMemory.
+    Facade over RedisWorkingMemory + EpisodicMemory + SkillStore.
     Used by CouncilManager and injected into council.py routes.
     """
 
@@ -63,9 +78,11 @@ class MemoryManager:
         self,
         working_memory: RedisWorkingMemory,
         episodic_memory: EpisodicMemory,
+        skill_store=None,   # Optional[SkillStore] — None when DB unavailable
     ):
         self.working = working_memory
         self.episodic = episodic_memory
+        self.skill_store = skill_store
 
     async def on_message(
         self,
@@ -103,8 +120,8 @@ class MemoryManager:
         query: str,
     ) -> MemoryContext:
         """
-        Retrieve relevant memories for an agent about to think().
-        Returns MemoryContext with working + episodic layers.
+        Retrieve relevant memories and skills for an agent about to think().
+        Returns MemoryContext with working + episodic + skill layers.
         """
         import asyncio
 
@@ -121,11 +138,35 @@ class MemoryManager:
             )
         )
 
-        working, episodic = await asyncio.gather(
-            working_task, episodic_task, return_exceptions=True
-        )
+        tasks = [working_task, episodic_task]
+
+        # Skill retrieval: embed query and search skill library
+        skill_task = None
+        if self.skill_store:
+            try:
+                query_embedding = await self.episodic._embed(query)
+                skill_task = asyncio.create_task(
+                    self.skill_store.search(
+                        query_embedding=query_embedding,
+                        agent_id=agent_id,
+                        limit=3,
+                        min_similarity=0.55,
+                    )
+                )
+                tasks.append(skill_task)
+            except Exception:
+                skill_task = None
+
+        results = await asyncio.gather(*tasks, return_exceptions=True)
+
+        working = results[0] if isinstance(results[0], list) else []
+        episodic = results[1] if isinstance(results[1], list) else []
+        skills = []
+        if skill_task is not None and len(results) > 2:
+            skills = results[2] if isinstance(results[2], list) else []
 
         return MemoryContext(
-            working=working if isinstance(working, list) else [],
-            episodic=episodic if isinstance(episodic, list) else [],
+            working=working,
+            episodic=episodic,
+            skills=skills,
         )
