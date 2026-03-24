@@ -45,10 +45,6 @@ const MODE_CARDS: ModeCard[] = [
   {
     mode: "evolution",
     icon: "DNA",
-    titleEn: "AGI Evolution",
-    titleZh: "AGI 自进化",
-    descEn: "SOUL mutation, benchmark loop, and next-generation distill.",
-    descZh: "SOUL 迭代、基准回环与下一代蒸馏。",
     colorClass: "from-amber-500/30 to-yellow-500/10 border-amber-300/45",
     x: -18,
     y: 26,
