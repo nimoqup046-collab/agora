@@ -4,8 +4,14 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { clsx } from "clsx";
 import { useAgoraStore } from "@/lib/store";
-import { sessionsApi } from "@/lib/api";
+import { sessionsApi, templatesApi, SessionTemplate } from "@/lib/api";
 import { useI18n } from "@/components/i18n/LanguageProvider";
+
+const CATEGORY_KEY: Record<string, string> = {
+  scientific: "sidebar.categoryScientific",
+  engineering: "sidebar.categoryEngineering",
+  review: "sidebar.categoryReview",
+};
 
 export function SessionSidebar() {
   const { t } = useI18n();
@@ -22,6 +28,8 @@ export function SessionSidebar() {
   const [newTask, setNewTask] = useState("");
   const [showForm, setShowForm] = useState(false);
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [templates, setTemplates] = useState<SessionTemplate[]>([]);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
 
   useEffect(() => {
     sessionsApi
@@ -34,20 +42,45 @@ export function SessionSidebar() {
         console.error(err);
         setLoadError(t("sidebar.loadError"));
       });
+
+    templatesApi.list().then(setTemplates).catch(() => {
+      // Templates are optional — fail silently
+    });
   }, [setSessions, t]);
 
+  const selectedTemplate = templates.find((t) => t.id === selectedTemplateId) ?? null;
+
+  const handleTemplateChange = (id: string) => {
+    setSelectedTemplateId(id);
+    if (id && !newTask.trim()) {
+      const tmpl = templates.find((t) => t.id === id);
+      if (tmpl?.suggested_first_message) setNewTask(tmpl.suggested_first_message);
+    }
+    if (!id) setNewTask("");
+  };
+
+  const canCreate =
+    !isCreatingSession && (newTask.trim().length > 0 || selectedTemplateId !== "");
+
   const createSession = async () => {
-    if (!newTask.trim()) return;
+    if (!canCreate) return;
     setIsCreatingSession(true);
     try {
       const session = await sessionsApi.create({
-        title: newTask.slice(0, 80),
-        task: newTask,
+        title: newTask.trim() ? newTask.slice(0, 80) : selectedTemplate?.name,
+        task: newTask.trim(),
+        template_id: selectedTemplateId || undefined,
       });
       setSessions([...sessions, session]);
       setCurrentSessionId(session.id);
-      router.push(`/council/${session.id}`);
+
+      const target = `/council/${session.id}`;
+      const hint = (session as { template?: { suggested_first_message?: string | null } })
+        .template?.suggested_first_message;
+      router.push(hint ? `${target}?hint=${encodeURIComponent(hint)}` : target);
+
       setNewTask("");
+      setSelectedTemplateId("");
       setShowForm(false);
       setLoadError(null);
     } catch (err) {
@@ -75,16 +108,44 @@ export function SessionSidebar() {
 
       {showForm && (
         <div className="p-3 border-b border-agora-border/70 module-divider space-y-2 shrink-0">
+          {/* Template selector — shown only when templates are available */}
+          {templates.length > 0 && (
+            <div className="space-y-1">
+              <label className="text-[10px] text-cyan-300/60 uppercase tracking-[0.15em]">
+                {t("sidebar.template")}
+              </label>
+              <select
+                value={selectedTemplateId}
+                onChange={(e) => handleTemplateChange(e.target.value)}
+                className="w-full bg-[#090f1f] border border-agora-border rounded px-2 py-1.5 text-xs text-slate-200 focus:outline-none focus:border-cyan-300/60"
+              >
+                <option value="">{t("sidebar.noTemplate")}</option>
+                {templates.map((tmpl) => (
+                  <option key={tmpl.id} value={tmpl.id}>
+                    [{t(CATEGORY_KEY[tmpl.category] ?? "sidebar.template")}] {tmpl.name}
+                  </option>
+                ))}
+              </select>
+              {selectedTemplate && (
+                <p className="text-[10px] text-slate-400 leading-snug">
+                  {selectedTemplate.description}
+                </p>
+              )}
+            </div>
+          )}
+
           <textarea
             value={newTask}
             onChange={(e) => setNewTask(e.target.value)}
-            placeholder={t("sidebar.placeholder")}
+            placeholder={
+              selectedTemplate ? t("sidebar.placeholderOverride") : t("sidebar.placeholder")
+            }
             rows={3}
             className="w-full bg-[#090f1f] border border-agora-border rounded px-2 py-1.5 text-xs text-slate-200 placeholder-slate-500 resize-none focus:outline-none focus:border-cyan-300/60"
           />
           <button
             onClick={createSession}
-            disabled={!newTask.trim() || isCreatingSession}
+            disabled={!canCreate}
             className="w-full py-1.5 rounded bg-cyan-500/20 border border-cyan-300/50 text-cyan-100 text-xs hover:bg-cyan-500/30 disabled:opacity-40 transition-colors"
           >
             {isCreatingSession ? t("sidebar.creating") : t("sidebar.startSession")}
