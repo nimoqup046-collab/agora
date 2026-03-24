@@ -166,14 +166,9 @@ const FALLBACK_TEMPLATES: SessionTemplate[] = [
 
 export const templatesApi = {
   list: async (): Promise<SessionTemplate[]> => {
-    try {
-      const data = await request<{ templates: SessionTemplate[] }>("/session-templates/");
-      if (Array.isArray(data.templates) && data.templates.length > 0) return data.templates;
-      return FALLBACK_TEMPLATES;
-    } catch {
-      // Template endpoint is optional in current backend phase.
-      return FALLBACK_TEMPLATES;
-    }
+    // Template endpoint is optional in current backend phase.
+    // Return local fallback immediately to avoid noisy 502s during API cold start.
+    return FALLBACK_TEMPLATES;
   },
 };
 
