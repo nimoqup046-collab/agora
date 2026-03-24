@@ -65,10 +65,12 @@ export function VotePanel({ sessionId }: VotePanelProps) {
         {result && (
           <div className="space-y-2 pt-1">
             <div className="flex items-center gap-2">
-              <span className={clsx(
-                "text-[10px] font-semibold tracking-widest font-mono",
-                result.decision === "approved" ? "text-emerald-400" : "text-rose-400"
-              )}>
+              <span
+                className={clsx(
+                  "text-[10px] font-semibold tracking-widest font-mono",
+                  result.decision === "approved" ? "text-emerald-400" : "text-rose-400"
+                )}
+              >
                 {result.decision.toUpperCase()}
               </span>
               <div className="flex gap-1 ml-auto">
@@ -82,10 +84,16 @@ export function VotePanel({ sessionId }: VotePanelProps) {
               {result.votes.map((v) => (
                 <div key={v.agent_id} className="flex items-start gap-2 text-[10px]">
                   <span className="text-slate-500 font-mono w-28 shrink-0">{v.agent_id}</span>
-                  <span className={clsx(
-                    "font-mono",
-                    v.option === "yea" ? "text-emerald-400" : v.option === "nay" ? "text-rose-400" : "text-slate-500"
-                  )}>
+                  <span
+                    className={clsx(
+                      "font-mono",
+                      v.option === "yea"
+                        ? "text-emerald-400"
+                        : v.option === "nay"
+                          ? "text-rose-400"
+                          : "text-slate-500"
+                    )}
+                  >
                     {v.option.toUpperCase()}
                   </span>
                   {v.rationale && (

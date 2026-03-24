@@ -1,6 +1,5 @@
 /**
- * AGORA API Client
- * Typed wrappers around the FastAPI backend.
+ * AGORA API client wrappers.
  */
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -85,53 +84,45 @@ export interface VoteResponse {
   }>;
 }
 
+export interface HealthResponse {
+  status: string;
+  app?: string;
+  agents?: number;
+}
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${API_URL}${path}`, {
     headers: { "Content-Type": "application/json" },
     ...options,
   });
+
   if (!res.ok) {
     const err = await res.text();
     throw new Error(`API ${res.status}: ${err}`);
   }
+
   return res.json();
 }
 
-// ── Agents ────────────────────────────────────────────────────────────────────
-
 export const agentsApi = {
   list: () => request<{ agents: Agent[] }>("/agents/").then((r) => r.agents),
-
   get: (agentId: string) => request<Agent>(`/agents/${agentId}`),
 };
 
-// ── Sessions ──────────────────────────────────────────────────────────────────
-
 export const sessionsApi = {
-  list: () =>
-    request<{ sessions: Session[] }>("/sessions/").then((r) => r.sessions),
-
-  get: (sessionId: string) =>
-    request<SessionDetail>(`/sessions/${sessionId}`),
-
+  list: () => request<{ sessions: Session[] }>("/sessions/").then((r) => r.sessions),
+  get: (sessionId: string) => request<SessionDetail>(`/sessions/${sessionId}`),
   create: (params: { title: string; task: string; participant_ids?: string[] }) =>
     request<Session>("/sessions/", {
       method: "POST",
       body: JSON.stringify(params),
     }),
-
   delete: (sessionId: string) =>
     request<{ status: string }>(`/sessions/${sessionId}`, { method: "DELETE" }),
 };
 
-// ── Council ───────────────────────────────────────────────────────────────────
-
 export const councilApi = {
-  sendMessage: (
-    sessionId: string,
-    content: string,
-    agentId?: string
-  ) =>
+  sendMessage: (sessionId: string, content: string, agentId?: string) =>
     request<{ message_id: string; agent_id: string; agent_name: string; content: string }>(
       `/council/${sessionId}/message`,
       {
@@ -141,13 +132,10 @@ export const councilApi = {
     ),
 
   decompose: (sessionId: string, task?: string) =>
-    request<DecomposeResponse>(
-      `/council/${sessionId}/decompose`,
-      {
-        method: "POST",
-        body: JSON.stringify({ task }),
-      }
-    ),
+    request<DecomposeResponse>(`/council/${sessionId}/decompose`, {
+      method: "POST",
+      body: JSON.stringify({ task }),
+    }),
 
   act: (
     sessionId: string,
@@ -182,15 +170,10 @@ export const councilApi = {
       body: JSON.stringify(params),
     }),
 
-  /**
-   * Returns an SSE URL for streaming a full council round.
-   */
   streamRoundUrl: (sessionId: string, userMessage: string, turns = 1) =>
     `${API_URL}/council/${sessionId}/stream?user_message=${encodeURIComponent(userMessage)}&turns=${turns}`,
 };
 
-// ── Health ────────────────────────────────────────────────────────────────────
-
 export const healthApi = {
-  check: () => request<{ status: string; agents: number }>("/health"),
+  check: () => request<HealthResponse>("/health"),
 };

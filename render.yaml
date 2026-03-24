@@ -1,5 +1,4 @@
 services:
-  # ── Backend: FastAPI ──────────────────────────────────────────────────────
   - type: web
     name: agora-api
     runtime: docker
@@ -10,7 +9,17 @@ services:
     envVars:
       - key: DATABASE_URL
         sync: false
+      - key: REDIS_URL
+        sync: false
+      - key: OPENROUTER_API_KEY
+        sync: false
       - key: DEEPSEEK_API_KEY
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: API_CORS_ORIGINS
         sync: false
       - key: DEFAULT_MODEL_CLAUDE
         value: deepseek-chat
@@ -21,7 +30,6 @@ services:
       - key: LOG_LEVEL
         value: info
 
-  # ── Frontend: Next.js ─────────────────────────────────────────────────────
   - type: web
     name: agora-web
     runtime: docker

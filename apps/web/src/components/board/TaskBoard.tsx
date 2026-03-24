@@ -20,7 +20,7 @@ export function TaskBoard({ sessionId }: TaskBoardProps) {
   const { tasks, updateTaskStatus } = useAgoraStore();
 
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex flex-col h-full overflow-hidden relative">
       <SectionHeader
         title="TASK BOARD"
         right={<DecomposeButton sessionId={sessionId} />}
@@ -53,8 +53,10 @@ export function TaskBoard({ sessionId }: TaskBoardProps) {
       </div>
 
       {tasks.length === 0 && (
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none mt-20">
-          <p className="text-xs text-slate-700">Click DECOMPOSE to generate tasks from the session.</p>
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none mt-20 px-6">
+          <p className="text-xs text-slate-700 text-center">
+            Click DECOMPOSE to generate tasks from the current session context.
+          </p>
         </div>
       )}
     </div>

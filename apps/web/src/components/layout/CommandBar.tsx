@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import { clsx } from "clsx";
 import { useAgoraStore } from "@/lib/store";
 import { StatusPill } from "@/components/common/StatusPill";
@@ -23,7 +22,7 @@ export function CommandBar({ sessionTitle, mode, onModeChange }: CommandBarProps
   const { isStreaming } = useAgoraStore();
 
   return (
-    <div className="h-10 shrink-0 bg-agora-surface border-b border-agora-border flex items-center px-4 gap-3 z-10">
+    <div className="h-10 shrink-0 bg-agora-surface border-b border-agora-border flex items-center px-3 sm:px-4 gap-2 sm:gap-3 z-10">
       <Link
         href="/"
         className="text-sm font-bold text-slate-200 hover:text-agora-accent transition-colors tracking-wider"
@@ -34,7 +33,7 @@ export function CommandBar({ sessionTitle, mode, onModeChange }: CommandBarProps
       {sessionTitle && (
         <>
           <span className="text-slate-700">/</span>
-          <span className="text-xs text-slate-400 font-mono truncate max-w-48">
+          <span className="text-xs text-slate-400 font-mono truncate max-w-32 sm:max-w-48">
             {sessionTitle}
           </span>
         </>
@@ -52,7 +51,7 @@ export function CommandBar({ sessionTitle, mode, onModeChange }: CommandBarProps
             key={key}
             onClick={() => onModeChange(key)}
             className={clsx(
-              "px-3 py-1 text-[10px] font-semibold tracking-widest rounded transition-colors",
+              "px-2 sm:px-3 py-1 text-[10px] font-semibold tracking-widest rounded transition-colors",
               mode === key
                 ? "text-agora-accent bg-agora-accent/10 border border-agora-accent/30"
                 : "text-slate-500 hover:text-slate-300 border border-transparent"

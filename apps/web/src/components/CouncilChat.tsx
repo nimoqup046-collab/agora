@@ -18,7 +18,6 @@ export function CouncilChat({ sessionId }: CouncilChatProps) {
   const [input, setInput] = useState("");
   const [turns, setTurns] = useState(1);
 
-  // Load existing messages on mount
   useEffect(() => {
     sessionsApi.get(sessionId).then((s) => setMessages(s.messages)).catch(console.error);
   }, [sessionId, setMessages]);
@@ -44,7 +43,6 @@ export function CouncilChat({ sessionId }: CouncilChatProps) {
 
       <MessageFeed sessionId={sessionId} />
 
-      {/* Input bar */}
       <form
         onSubmit={handleSubmit}
         className="border-t border-agora-border bg-agora-surface/80 p-3 space-y-2 shrink-0"
@@ -59,7 +57,7 @@ export function CouncilChat({ sessionId }: CouncilChatProps) {
                 handleSubmit(e as unknown as React.FormEvent);
               }
             }}
-            placeholder="Describe a problem for the council..."
+            placeholder="Describe a hard problem for the council..."
             disabled={isStreaming}
             rows={2}
             className="flex-1 bg-agora-bg border border-agora-border rounded px-3 py-2 text-sm text-slate-200 placeholder-slate-600 resize-none focus:outline-none focus:border-agora-accent/60 disabled:opacity-50"
@@ -85,7 +83,7 @@ export function CouncilChat({ sessionId }: CouncilChatProps) {
             )}
 
             <div className="flex items-center gap-1 text-[10px] text-slate-600">
-              <span>R:</span>
+              <span>Turns:</span>
               <select
                 value={turns}
                 onChange={(e) => setTurns(Number(e.target.value))}
@@ -102,7 +100,7 @@ export function CouncilChat({ sessionId }: CouncilChatProps) {
         <p className="text-[10px] text-slate-700">
           {isStreaming
             ? "Council is deliberating..."
-            : "Enter to send · Shift+Enter for newline"}
+            : "Enter to send, Shift+Enter for newline."}
         </p>
       </form>
     </div>
