@@ -3,7 +3,7 @@
  */
 
 /** Legacy modes kept for backward-compat route handling */
-export type LegacyPanelMode = 'council' | 'arena' | 'board'
+export type LegacyPanelMode = 'council' | 'arena' | 'board' | 'creative'
 
 /** Primary workspace modes surfaced through the Agora orbital menu */
 export type PanelMode = 'coding' | 'research' | 'reasoning' | 'evolution' | 'creation'
