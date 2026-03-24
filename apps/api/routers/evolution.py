@@ -5,14 +5,19 @@ POST /evolution/trigger              Analyze sessions → draft SOULs + extract 
 GET  /evolution/souls/{agent_id}     List SOUL versions for an agent
 POST /evolution/souls/{soul_id}/approve  Human approves + activates a SOUL
 POST /evolution/score-skills         Evolutor retroactively scores skill usage quality
+POST /evolution/retire-skills        Auto-retire weak skills (Phase C)
 """
 
 import asyncio
+import os
 
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
 from ..core.council import council
+
+# Phase C: auto-approve extracted skills when env var is set
+_AUTO_APPROVE_SKILLS = os.getenv("AUTO_APPROVE_SKILLS", "").lower() in ("1", "true", "yes")
 
 router = APIRouter(prefix="/evolution", tags=["evolution"])
 
@@ -31,6 +36,11 @@ class TriggerResponse(BaseModel):
 
 class ScoreSkillsRequest(BaseModel):
     limit: int = Field(default=20, ge=1, le=100, description="Max unscored entries to process")
+
+
+class RetireSkillsRequest(BaseModel):
+    min_usage: int = Field(default=10, ge=1, description="Minimum usage count before a skill is eligible for retirement")
+    max_success_rate: float = Field(default=0.3, ge=0.0, le=1.0, description="Success rate below which a skill is retired")
 
 
 @router.post("/trigger", response_model=TriggerResponse)
@@ -134,7 +144,17 @@ async def trigger_evolution(body: TriggerRequest):
                     except Exception:
                         pass
 
-                await council.skills.create(
+                # Phase C: version chaining — if skill with same name exists, bump version
+                parent_skill_id = None
+                next_version = 1
+                existing = await council.skills.get_by_name(sd.name)
+                if existing:
+                    parent_skill_id = existing.id
+                    next_version = existing.version + 1
+                    # Deprecate the old version so it's replaced by the new one
+                    await council.skills.deprecate(existing.id)
+
+                skill = await council.skills.create(
                     name=sd.name,
                     description=sd.description,
                     domain=sd.domain,
@@ -143,7 +163,13 @@ async def trigger_evolution(body: TriggerRequest):
                     source_session_ids=sd.source_session_ids,
                     created_by_agent_id="evolutor",
                     embedding=embedding,
+                    parent_skill_id=parent_skill_id,
                 )
+
+                # Phase C: auto-approve if configured
+                if _AUTO_APPROVE_SKILLS:
+                    await council.skills.approve(skill.id, approved_by="evolutor-auto")
+
                 skills_extracted += 1
         except Exception as e:
             print(f"[evolution] Skill extraction failed: {e}")
@@ -205,6 +231,32 @@ async def score_skill_usage(body: ScoreSkillsRequest):
     return {
         "scored": scored,
         "skills_updated": list(skill_ids_updated),
+    }
+
+
+@router.post("/retire-skills")
+async def retire_weak_skills(body: RetireSkillsRequest):
+    """
+    Phase C: Auto-retire skills that have been used enough times but consistently
+    underperform. Condition: usage_count >= min_usage AND success_rate < max_success_rate.
+
+    Safe to run on a schedule (e.g. daily cron). Deprecated skills are excluded from
+    semantic search and injection but are kept in DB for audit / manual review.
+    """
+    if not council.skills:
+        raise HTTPException(status_code=503, detail="Skill store not available")
+
+    retired_ids = await council.skills.auto_retire_weak_skills(
+        min_usage=body.min_usage,
+        max_success_rate=body.max_success_rate,
+    )
+    return {
+        "retired": len(retired_ids),
+        "retired_skill_ids": retired_ids,
+        "criteria": {
+            "min_usage": body.min_usage,
+            "max_success_rate": body.max_success_rate,
+        },
     }
 
 
