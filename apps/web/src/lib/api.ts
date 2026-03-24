@@ -2,7 +2,9 @@
  * AGORA API client wrappers.
  */
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+// Use same-origin proxy by default to avoid build-time env injection pitfalls
+// on Docker deployments (Render).
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "/api/proxy";
 
 export interface Agent {
   agent_id: string;

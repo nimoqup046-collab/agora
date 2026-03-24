@@ -47,13 +47,16 @@ API_CORS_ORIGINS=https://<your-web-service>.onrender.com
 
 ## 4) Configure `agora-web` environment variables
 
-Set this in Render for the web service:
+Set these in Render for the web service:
 
 ```bash
 NEXT_PUBLIC_API_URL=https://<your-api-service>.onrender.com
+AGORA_API_URL=https://<your-api-service>.onrender.com
 ```
 
-Important: this must point to the public API URL.
+Important:
+- Both values should point to the public API URL.
+- `AGORA_API_URL` is used by the web runtime proxy and avoids Docker build-time env injection issues.
 
 ## 5) Validate public deployment
 
@@ -87,6 +90,6 @@ DEFAULT_MODEL_META=glm-4-flash
 - CORS blocked in browser:
   - Ensure `API_CORS_ORIGINS` is set to your exact web origin.
 - Web cannot reach API:
-  - Ensure `NEXT_PUBLIC_API_URL` points to the API public URL.
+  - Ensure `NEXT_PUBLIC_API_URL` and `AGORA_API_URL` both point to the API public URL.
 - First request is slow:
   - Render free tier can cold start after inactivity.
