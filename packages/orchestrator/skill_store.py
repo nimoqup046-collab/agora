@@ -37,10 +37,12 @@ class Skill:
     created_by_agent_id: str
     usage_count: int
     success_count: int
+    avg_quality_score: float | None
     version: int
     parent_skill_id: str | None
     approved_at: datetime | None
     approved_by: str | None
+    deprecated_at: datetime | None
     created_at: datetime
     updated_at: datetime
 
@@ -51,6 +53,14 @@ class Skill:
     @property
     def is_approved(self) -> bool:
         return self.approved_at is not None
+
+    @property
+    def is_deprecated(self) -> bool:
+        return self.deprecated_at is not None
+
+    @property
+    def is_active(self) -> bool:
+        return self.is_approved and not self.is_deprecated
 
     def to_dict(self) -> dict:
         return {
@@ -66,10 +76,12 @@ class Skill:
             "usage_count": self.usage_count,
             "success_count": self.success_count,
             "success_rate": round(self.success_rate, 3),
+            "avg_quality_score": round(self.avg_quality_score, 3) if self.avg_quality_score is not None else None,
             "version": self.version,
             "parent_skill_id": self.parent_skill_id,
             "approved_at": self.approved_at.isoformat() if self.approved_at else None,
             "approved_by": self.approved_by,
+            "deprecated_at": self.deprecated_at.isoformat() if self.deprecated_at else None,
             "created_at": self.created_at.isoformat(),
             "updated_at": self.updated_at.isoformat(),
         }
@@ -91,25 +103,28 @@ class SkillResult:
 
 
 def _row_to_skill(row: asyncpg.Record) -> Skill:
+    row_dict = dict(row)
     return Skill(
-        id=row["id"],
-        name=row["name"],
-        description=row["description"],
-        domain=row["domain"],
-        template=row["template"],
-        examples=list(row["examples"] or []),
+        id=row_dict["id"],
+        name=row_dict["name"],
+        description=row_dict["description"],
+        domain=row_dict["domain"],
+        template=row_dict["template"],
+        examples=list(row_dict["examples"] or []),
         embedding=None,   # not returned in normal queries for perf
-        agent_scope=list(row["agent_scope"]) if row["agent_scope"] else None,
-        source_session_ids=list(row["source_session_ids"] or []),
-        created_by_agent_id=row["created_by_agent_id"] or "human",
-        usage_count=row["usage_count"],
-        success_count=row["success_count"],
-        version=row["version"],
-        parent_skill_id=row["parent_skill_id"],
-        approved_at=row["approved_at"],
-        approved_by=row["approved_by"],
-        created_at=row["created_at"],
-        updated_at=row["updated_at"],
+        agent_scope=list(row_dict["agent_scope"]) if row_dict["agent_scope"] else None,
+        source_session_ids=list(row_dict["source_session_ids"] or []),
+        created_by_agent_id=row_dict["created_by_agent_id"] or "human",
+        usage_count=row_dict["usage_count"],
+        success_count=row_dict["success_count"],
+        avg_quality_score=row_dict.get("avg_quality_score"),
+        version=row_dict["version"],
+        parent_skill_id=row_dict["parent_skill_id"],
+        approved_at=row_dict["approved_at"],
+        approved_by=row_dict["approved_by"],
+        deprecated_at=row_dict.get("deprecated_at"),
+        created_at=row_dict["created_at"],
+        updated_at=row_dict["updated_at"],
     )
 
 
@@ -212,9 +227,10 @@ class SkillStore:
         domain: str | None = None,
         agent_id: str | None = None,
         approved_only: bool = False,
+        include_deprecated: bool = False,
         limit: int = 50,
     ) -> list[Skill]:
-        """List skills with optional filters."""
+        """List skills with optional filters. Excludes deprecated by default."""
         clauses = []
         params: list = []
 
@@ -226,6 +242,8 @@ class SkillStore:
             clauses.append(f"(agent_scope IS NULL OR agent_scope && ${len(params)})")
         if approved_only:
             clauses.append("approved_at IS NOT NULL")
+        if not include_deprecated:
+            clauses.append("deprecated_at IS NULL")
 
         where = f"WHERE {' AND '.join(clauses)}" if clauses else ""
         params.append(limit)
@@ -256,7 +274,7 @@ class SkillStore:
         """
         embedding_str = f"[{','.join(str(v) for v in query_embedding)}]"
 
-        clauses = ["approved_at IS NOT NULL", "embedding IS NOT NULL"]
+        clauses = ["approved_at IS NOT NULL", "embedding IS NOT NULL", "deprecated_at IS NULL"]
         params: list = [embedding_str]
 
         if agent_id:
@@ -302,6 +320,61 @@ class SkillStore:
                 "UPDATE agent_skills SET success_count = success_count + 1, updated_at = now() WHERE id = $1",
                 skill_id,
             )
+
+    # ── Deprecation (Phase C) ─────────────────────────────────────────────────
+
+    async def deprecate(self, skill_id: str) -> Optional[Skill]:
+        """Mark a skill as deprecated (soft-delete). Excluded from search/inject."""
+        async with self._pool.acquire() as conn:
+            row = await conn.fetchrow(
+                """
+                UPDATE agent_skills
+                SET deprecated_at = now(), updated_at = now()
+                WHERE id = $1 AND deprecated_at IS NULL
+                RETURNING *
+                """,
+                skill_id,
+            )
+        return _row_to_skill(row) if row else None
+
+    async def auto_retire_weak_skills(
+        self,
+        min_usage: int = 10,
+        max_success_rate: float = 0.3,
+    ) -> list[str]:
+        """
+        Retire skills that have been used enough times but consistently underperform.
+        Condition: usage_count >= min_usage AND success_count/usage_count < max_success_rate.
+        Returns list of deprecated skill IDs.
+        """
+        async with self._pool.acquire() as conn:
+            rows = await conn.fetch(
+                """
+                UPDATE agent_skills
+                SET deprecated_at = now(), updated_at = now()
+                WHERE approved_at IS NOT NULL
+                  AND deprecated_at IS NULL
+                  AND usage_count >= $1
+                  AND (success_count::float / GREATEST(usage_count, 1)) < $2
+                RETURNING id
+                """,
+                min_usage, max_success_rate,
+            )
+        return [r["id"] for r in rows]
+
+    async def get_by_name(self, name: str) -> Optional[Skill]:
+        """Find the latest non-deprecated skill by name (for version chaining)."""
+        async with self._pool.acquire() as conn:
+            row = await conn.fetchrow(
+                """
+                SELECT * FROM agent_skills
+                WHERE name = $1 AND deprecated_at IS NULL
+                ORDER BY version DESC
+                LIMIT 1
+                """,
+                name,
+            )
+        return _row_to_skill(row) if row else None
 
     # ── Deletion ──────────────────────────────────────────────────────────────
 
@@ -400,14 +473,16 @@ class SkillStore:
                     await conn.execute(
                         """
                         UPDATE agent_skills
-                        SET usage_count   = $2,
-                            success_count = $3,
-                            updated_at    = now()
+                        SET usage_count       = $2,
+                            success_count     = $3,
+                            avg_quality_score = $4,
+                            updated_at        = now()
                         WHERE id = $1
                         """,
                         skill_id,
                         int(row["total"]),
                         int(row["successes"]),
+                        float(row["avg_q"]) if row["avg_q"] is not None else None,
                     )
         except Exception:
             pass

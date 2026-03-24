@@ -275,6 +275,15 @@ export const evolutionApi = {
       `/evolution/souls/${soulId}/approve`,
       { method: "POST" }
     ),
+
+  retireSkills: (minUsage = 10, maxSuccessRate = 0.3) =>
+    request<{ retired: number; retired_skill_ids: string[]; criteria: object }>(
+      "/evolution/retire-skills",
+      {
+        method: "POST",
+        body: JSON.stringify({ min_usage: minUsage, max_success_rate: maxSuccessRate }),
+      }
+    ),
 };
 
 // ── Skills ────────────────────────────────────────────────────────────────────
@@ -292,10 +301,12 @@ export interface Skill {
   usage_count: number;
   success_count: number;
   success_rate: number;
+  avg_quality_score: number | null;
   version: number;
   parent_skill_id: string | null;
   approved_at: string | null;
   approved_by: string | null;
+  deprecated_at: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -356,7 +367,13 @@ export const skillsApi = {
         body: JSON.stringify({ positive }),
       }
     ),
+
+  deprecate: (skillId: string) =>
+    request<{ deprecated: boolean; skill: Skill }>(`/skills/${skillId}/deprecate`, {
+      method: "POST",
+    }),
 };
+
 
 // ── Health ────────────────────────────────────────────────────────────────────
 

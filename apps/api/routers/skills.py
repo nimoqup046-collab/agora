@@ -75,14 +75,16 @@ async def list_skills(
     domain: Optional[str] = None,
     agent_id: Optional[str] = None,
     approved_only: bool = False,
+    include_deprecated: bool = False,
     limit: int = 50,
 ):
-    """List skills with optional domain/agent filters."""
+    """List skills with optional domain/agent filters. Excludes deprecated by default."""
     store = _skill_store()
     skills = await store.list_all(
         domain=domain,
         agent_id=agent_id,
         approved_only=approved_only,
+        include_deprecated=include_deprecated,
         limit=limit,
     )
     return {"skills": [s.to_dict() for s in skills], "total": len(skills)}
@@ -189,3 +191,20 @@ async def record_feedback(skill_id: str, body: FeedbackRequest):
         await store.increment_success(skill_id)
 
     return {"recorded": True, "positive": body.positive, "skill_id": skill_id}
+
+
+@router.post("/{skill_id}/deprecate")
+async def deprecate_skill(skill_id: str):
+    """
+    Phase C: Manually deprecate a skill (soft-delete).
+    Deprecated skills are excluded from search and injection but kept in DB.
+    Use DELETE for hard deletion.
+    """
+    store = _skill_store()
+    skill = await store.deprecate(skill_id)
+    if not skill:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Skill '{skill_id}' not found or already deprecated"
+        )
+    return {"deprecated": True, "skill": skill.to_dict()}
