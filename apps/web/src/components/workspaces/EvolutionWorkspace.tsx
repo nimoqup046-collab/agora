@@ -1,6 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
 import { useI18n } from "@/components/i18n/LanguageProvider";
 import { EvolutionPanel } from "@/components/arena/EvolutionPanel";
 

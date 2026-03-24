@@ -1,6 +1,5 @@
 "use client";
 
-import { AnimatePresence, motion } from "framer-motion";
 import { useI18n } from "@/components/i18n/LanguageProvider";
 import { ArenaPanel } from "@/components/arena/ArenaPanel";
 import { TaskBoard } from "@/components/board/TaskBoard";
