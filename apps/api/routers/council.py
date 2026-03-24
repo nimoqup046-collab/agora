@@ -79,21 +79,36 @@ async def _enrich_with_memory(
     session_id: str,
     agent_id: str,
     query: str,
-) -> tuple[list[AgentMessage], list[str]]:
+) -> tuple[list[AgentMessage], list[str], list[str]]:
     """
     Retrieve memory context (episodic + skills) and return as a SYSTEM message list.
-    Returns (messages, skill_ids_used) — skill_ids used for usage tracking.
+    Returns (messages, skill_ids, skill_names) — for usage tracking and SSE events.
+    Also fires log_usage for each injected skill (audit trail).
     """
     if not council.memory:
-        return [], []
+        return [], [], []
     try:
         ctx = await council.memory.recall(session_id, agent_id, query)
         if ctx.is_empty():
-            return [], []
+            return [], [], []
         system_text = ctx.to_system_prompt()
-        return [AgentMessage(role=MessageRole.SYSTEM, content=system_text)], ctx.active_skill_ids()
+        skill_ids = ctx.active_skill_ids()
+        skill_names = [sr.skill.name for sr in ctx.skills]
+        # Fire-and-forget: audit log each injection
+        if council.skills and ctx.skills:
+            for sr in ctx.skills:
+                asyncio.create_task(
+                    council.skills.log_usage(
+                        skill_id=sr.skill.id,
+                        session_id=session_id,
+                        agent_id=agent_id,
+                        query_text=query,
+                        similarity_score=sr.similarity,
+                    )
+                )
+        return [AgentMessage(role=MessageRole.SYSTEM, content=system_text)], skill_ids, skill_names
     except Exception:
-        return [], []
+        return [], [], []
 
 
 def _fire_skill_usage(skill_ids: list[str]) -> None:
@@ -149,7 +164,7 @@ async def send_message(session_id: str, body: UserMessage):
     # Build history + memory context (includes skills)
     session = await council.sessions.get(session_id)
     history = session.get_history_for_agent(agent_id)
-    memory_msgs, skill_ids = await _enrich_with_memory(session_id, agent_id, body.content)
+    memory_msgs, skill_ids, _skill_names = await _enrich_with_memory(session_id, agent_id, body.content)
     messages = memory_msgs + _build_agent_messages(history)
 
     try:
@@ -199,8 +214,18 @@ async def stream_round(session_id: str, user_message: str, turns: int = 1):
             # Fetch fresh session state (messages may have grown)
             current_session = await council.sessions.get(session_id)
             history = current_session.get_history_for_agent(turn.agent_id)
-            memory_msgs, skill_ids = await _enrich_with_memory(session_id, turn.agent_id, user_message)
+            memory_msgs, skill_ids, skill_names = await _enrich_with_memory(session_id, turn.agent_id, user_message)
             messages = memory_msgs + _build_agent_messages(history)
+
+            if skill_ids:
+                yield {
+                    "data": json.dumps({
+                        "type": "skills_injected",
+                        "agent_id": turn.agent_id,
+                        "skill_ids": skill_ids,
+                        "skill_names": skill_names,
+                    })
+                }
 
             yield {
                 "data": json.dumps(
@@ -275,7 +300,7 @@ async def run_round(session_id: str, body: UserMessage):
 
         current_session = await council.sessions.get(session_id)
         history = current_session.get_history_for_agent(turn.agent_id)
-        memory_msgs, skill_ids = await _enrich_with_memory(session_id, turn.agent_id, body.content)
+        memory_msgs, skill_ids, _skill_names = await _enrich_with_memory(session_id, turn.agent_id, body.content)
         messages = memory_msgs + _build_agent_messages(history)
 
         try:
