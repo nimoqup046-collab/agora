@@ -28,7 +28,8 @@ RUN pip install -e /app/packages/adapter && \
 RUN useradd -m -u 1000 agora && chown -R agora:agora /app
 USER agora
 
-WORKDIR /app/apps/api
 EXPOSE 8000
 
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Keep /app on sys.path so package-relative imports in apps/api work in production.
+WORKDIR /app
+CMD ["uvicorn", "apps.api.main:app", "--host", "0.0.0.0", "--port", "8000"]
