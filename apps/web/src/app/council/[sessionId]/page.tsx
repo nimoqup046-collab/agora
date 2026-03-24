@@ -11,6 +11,7 @@ import { ResponsiveWorkbench } from "@/components/layout/ResponsiveWorkbench";
 import { StatusStrip } from "@/components/layout/StatusStrip";
 import { SessionSidebar } from "@/components/SessionSidebar";
 import { GraphPanel } from "@/components/graph/GraphPanel";
+import { MemoryOrb } from "@/components/MemoryOrb";
 import { useI18n } from "@/components/i18n/LanguageProvider";
 
 import { CodingWorkspace } from "@/components/workspaces/CodingWorkspace";
@@ -37,7 +38,7 @@ export default function SessionPage({ params }: SessionPageProps) {
   const rawMode = searchParams.get("mode");
   const mode: PanelMode = VALID_MODES.includes(rawMode as PanelMode)
     ? (rawMode as PanelMode)
-    : "research"; // default to research (council)
+    : "research";
 
   const [sessionTitle, setSessionTitle] = useState<string | undefined>();
 
@@ -75,10 +76,10 @@ export default function SessionPage({ params }: SessionPageProps) {
       <motion.div
         key={mode}
         className="relative flex-1 flex flex-col overflow-hidden"
-        initial={{ opacity: 0, scale: 0.98, filter: "blur(8px)" }}
+        initial={{ opacity: 0, scale: 0.98, filter: "blur(6px)" }}
         animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-        exit={{ opacity: 0, scale: 1.02, filter: "blur(8px)" }}
-        transition={{ duration: 0.22, ease: "easeOut" }}
+        exit={{ opacity: 0, scale: 1.02, filter: "blur(6px)" }}
+        transition={{ duration: 0.25, ease: "easeOut" }}
       >
         <span className="mode-warp" />
         {mode === "coding" && <CodingWorkspace sessionId={sessionId} />}
@@ -104,6 +105,7 @@ export default function SessionPage({ params }: SessionPageProps) {
         workspaceLabel={t(`menu.${mode}`)}
       />
       <StatusStrip />
+      <MemoryOrb />
     </>
   );
 }
