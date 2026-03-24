@@ -7,10 +7,9 @@ import { useAgoraStore } from "@/lib/store";
 import { sessionsApi } from "@/lib/api";
 
 import { CommandBar } from "@/components/layout/CommandBar";
-import { PanelGroup } from "@/components/layout/PanelGroup";
+import { ResponsiveWorkbench } from "@/components/layout/ResponsiveWorkbench";
 import { StatusStrip } from "@/components/layout/StatusStrip";
 import { SessionSidebar } from "@/components/SessionSidebar";
-import { AgentPanel } from "@/components/AgentPanel";
 import { CouncilChat } from "@/components/CouncilChat";
 import { ArenaPanel } from "@/components/arena/ArenaPanel";
 import { TaskBoard } from "@/components/board/TaskBoard";
@@ -38,16 +37,17 @@ export default function SessionPage({ params }: SessionPageProps) {
     setCurrentSessionId(sessionId);
   }, [sessionId, setCurrentSessionId]);
 
-  // Resolve session title for CommandBar
   useEffect(() => {
     const cached = sessions.find((s) => s.id === sessionId);
     if (cached) {
       setSessionTitle(cached.title);
-    } else {
-      sessionsApi.get(sessionId)
-        .then((s) => setSessionTitle(s.title))
-        .catch(console.error);
+      return;
     }
+
+    sessionsApi
+      .get(sessionId)
+      .then((s) => setSessionTitle(s.title))
+      .catch(console.error);
   }, [sessionId, sessions]);
 
   const handleModeChange = (newMode: PanelMode) => {
@@ -57,7 +57,9 @@ export default function SessionPage({ params }: SessionPageProps) {
     } else {
       params.set("mode", newMode);
     }
-    router.replace(`/council/${sessionId}?${params.toString()}`, { scroll: false });
+
+    const query = params.toString();
+    router.replace(`/council/${sessionId}${query ? `?${query}` : ""}`, { scroll: false });
   };
 
   const centerPanel = (
@@ -77,9 +79,6 @@ export default function SessionPage({ params }: SessionPageProps) {
     </AnimatePresence>
   );
 
-  const leftPanel = <SessionSidebar />;
-  const rightPanel = <GraphPanel sessionId={sessionId} />;
-
   return (
     <>
       <CommandBar
@@ -87,13 +86,12 @@ export default function SessionPage({ params }: SessionPageProps) {
         mode={mode}
         onModeChange={handleModeChange}
       />
-      <div className="flex-1 overflow-hidden flex">
-        <PanelGroup
-          left={leftPanel}
-          center={centerPanel}
-          right={rightPanel}
-        />
-      </div>
+      <ResponsiveWorkbench
+        left={<SessionSidebar />}
+        center={centerPanel}
+        right={<GraphPanel sessionId={sessionId} />}
+        workspaceLabel={mode.toUpperCase()}
+      />
       <StatusStrip />
     </>
   );

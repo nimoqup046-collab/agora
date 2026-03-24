@@ -22,7 +22,7 @@ export function MessageFeed({ sessionId }: MessageFeedProps) {
       {messages.length === 0 && Object.keys(streamingAgents).length === 0 && (
         <div className="flex flex-col items-center justify-center h-full text-center space-y-3 text-slate-600">
           <div className="text-3xl font-mono text-slate-700">_</div>
-          <p className="text-xs text-slate-600">The council awaits your question.</p>
+          <p className="text-xs text-slate-600">The council is ready. Ask your first question.</p>
         </div>
       )}
 

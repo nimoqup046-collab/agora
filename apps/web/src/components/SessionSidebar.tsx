@@ -2,9 +2,9 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { clsx } from "clsx";
 import { useAgoraStore } from "@/lib/store";
 import { sessionsApi } from "@/lib/api";
-import { clsx } from "clsx";
 
 export function SessionSidebar() {
   const router = useRouter();
@@ -19,9 +19,19 @@ export function SessionSidebar() {
 
   const [newTask, setNewTask] = useState("");
   const [showForm, setShowForm] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   useEffect(() => {
-    sessionsApi.list().then(setSessions).catch(console.error);
+    sessionsApi
+      .list()
+      .then((items) => {
+        setSessions(items);
+        setLoadError(null);
+      })
+      .catch((err) => {
+        console.error(err);
+        setLoadError("Unable to load sessions. Check API connection.");
+      });
   }, [setSessions]);
 
   const createSession = async () => {
@@ -29,7 +39,7 @@ export function SessionSidebar() {
     setIsCreatingSession(true);
     try {
       const session = await sessionsApi.create({
-        title: newTask.slice(0, 50),
+        title: newTask.slice(0, 80),
         task: newTask,
       });
       setSessions([...sessions, session]);
@@ -37,22 +47,23 @@ export function SessionSidebar() {
       router.push(`/council/${session.id}`);
       setNewTask("");
       setShowForm(false);
+      setLoadError(null);
     } catch (err) {
       console.error("Failed to create session:", err);
+      setLoadError("Session creation failed. Verify backend and try again.");
     } finally {
       setIsCreatingSession(false);
     }
   };
 
   return (
-    <div className="w-64 shrink-0 border-r border-agora-border bg-agora-surface flex flex-col">
-      {/* Header */}
-      <div className="px-4 py-3 border-b border-agora-border flex items-center justify-between">
+    <div className="w-full lg:w-64 shrink-0 border-r border-agora-border bg-agora-surface flex flex-col h-full">
+      <div className="px-4 py-3 border-b border-agora-border flex items-center justify-between shrink-0">
         <h2 className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
           Sessions
         </h2>
         <button
-          onClick={() => setShowForm(!showForm)}
+          onClick={() => setShowForm((v) => !v)}
           className="text-agora-accent hover:text-agora-accent/80 text-lg leading-none"
           title="New session"
         >
@@ -60,9 +71,8 @@ export function SessionSidebar() {
         </button>
       </div>
 
-      {/* New session form */}
       {showForm && (
-        <div className="p-3 border-b border-agora-border space-y-2">
+        <div className="p-3 border-b border-agora-border space-y-2 shrink-0">
           <textarea
             value={newTask}
             onChange={(e) => setNewTask(e.target.value)}
@@ -80,11 +90,16 @@ export function SessionSidebar() {
         </div>
       )}
 
-      {/* Session list */}
+      {loadError && (
+        <div className="px-3 py-2 border-b border-agora-border text-[11px] text-rose-400 bg-rose-950/20 shrink-0">
+          {loadError}
+        </div>
+      )}
+
       <div className="flex-1 overflow-y-auto py-1">
-        {sessions.length === 0 && (
-          <p className="text-center text-xs text-slate-600 py-6">
-            No sessions yet.
+        {sessions.length === 0 && !loadError && (
+          <p className="text-center text-xs text-slate-600 py-6 px-4">
+            No sessions yet. Create one and start a multi-agent run.
           </p>
         )}
 

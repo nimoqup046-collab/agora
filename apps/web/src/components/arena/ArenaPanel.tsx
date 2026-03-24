@@ -34,7 +34,7 @@ export function ArenaPanel({ sessionId }: ArenaPanelProps) {
             <div className="text-2xl font-mono">[ ]</div>
             <p className="text-xs">No pending actions.</p>
             <p className="text-[10px] text-slate-700">
-              Use POST /council/&#123;id&#125;/act to generate an action plan.
+              Use /council/{`{id}`}/act to generate an action proposal.
             </p>
           </div>
         ) : (
