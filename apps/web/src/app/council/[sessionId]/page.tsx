@@ -10,14 +10,18 @@ import { CommandBar } from "@/components/layout/CommandBar";
 import { ResponsiveWorkbench } from "@/components/layout/ResponsiveWorkbench";
 import { StatusStrip } from "@/components/layout/StatusStrip";
 import { SessionSidebar } from "@/components/SessionSidebar";
-import { CouncilChat } from "@/components/CouncilChat";
-import { ArenaPanel } from "@/components/arena/ArenaPanel";
-import { TaskBoard } from "@/components/board/TaskBoard";
-import { EvolutionPanel } from "@/components/arena/EvolutionPanel";
 import { GraphPanel } from "@/components/graph/GraphPanel";
 import { useI18n } from "@/components/i18n/LanguageProvider";
 
+import { CodingWorkspace } from "@/components/workspaces/CodingWorkspace";
+import { ResearchWorkspace } from "@/components/workspaces/ResearchWorkspace";
+import { ReasoningWorkspace } from "@/components/workspaces/ReasoningWorkspace";
+import { EvolutionWorkspace } from "@/components/workspaces/EvolutionWorkspace";
+import { CreationWorkspace } from "@/components/workspaces/CreationWorkspace";
+
 import type { PanelMode } from "@/types";
+
+const VALID_MODES: PanelMode[] = ["coding", "research", "reasoning", "evolution", "creation"];
 
 interface SessionPageProps {
   params: Promise<{ sessionId: string }>;
@@ -31,10 +35,9 @@ export default function SessionPage({ params }: SessionPageProps) {
   const router = useRouter();
 
   const rawMode = searchParams.get("mode");
-  const mode: PanelMode =
-    rawMode === "arena" || rawMode === "board" || rawMode === "evolution"
-      ? rawMode
-      : "council";
+  const mode: PanelMode = VALID_MODES.includes(rawMode as PanelMode)
+    ? (rawMode as PanelMode)
+    : "research"; // default to research (council)
 
   const [sessionTitle, setSessionTitle] = useState<string | undefined>();
 
@@ -57,7 +60,7 @@ export default function SessionPage({ params }: SessionPageProps) {
 
   const handleModeChange = (newMode: PanelMode) => {
     const params = new URLSearchParams(searchParams.toString());
-    if (newMode === "council") {
+    if (newMode === "research") {
       params.delete("mode");
     } else {
       params.set("mode", newMode);
@@ -78,10 +81,11 @@ export default function SessionPage({ params }: SessionPageProps) {
         transition={{ duration: 0.22, ease: "easeOut" }}
       >
         <span className="mode-warp" />
-        {mode === "council" && <CouncilChat sessionId={sessionId} />}
-        {mode === "arena" && <ArenaPanel sessionId={sessionId} />}
-        {mode === "board" && <TaskBoard sessionId={sessionId} />}
-        {mode === "evolution" && <EvolutionPanel />}
+        {mode === "coding" && <CodingWorkspace sessionId={sessionId} />}
+        {mode === "research" && <ResearchWorkspace sessionId={sessionId} />}
+        {mode === "reasoning" && <ReasoningWorkspace />}
+        {mode === "evolution" && <EvolutionWorkspace />}
+        {mode === "creation" && <CreationWorkspace />}
       </motion.div>
     </AnimatePresence>
   );
@@ -97,15 +101,7 @@ export default function SessionPage({ params }: SessionPageProps) {
         left={<SessionSidebar />}
         center={centerPanel}
         right={<GraphPanel sessionId={sessionId} />}
-        workspaceLabel={
-          mode === "council"
-            ? t("command.council")
-            : mode === "arena"
-              ? t("command.arena")
-              : mode === "board"
-                ? t("command.board")
-                : t("command.evolution")
-        }
+        workspaceLabel={t(`menu.${mode}`)}
       />
       <StatusStrip />
     </>

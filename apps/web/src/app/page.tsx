@@ -5,43 +5,23 @@ import { motion } from "framer-motion";
 import { LanguageToggle } from "@/components/i18n/LanguageToggle";
 import { useI18n } from "@/components/i18n/LanguageProvider";
 import { WisdomHall } from "@/components/home/WisdomHall";
+import { PixelIcon, MENU_ITEMS } from "@/components/menu/AgoraMenu";
 
 export default function HomePage() {
   const { locale, t } = useI18n();
 
-  const modules = [
-    {
-      key: "COUNCIL",
-      descEn: "Multi-agent deliberation and consensus stream.",
-      descZh: "多智能体推理协商与结论共识中心。",
-      href: "/council",
-      active: true,
-    },
-    {
-      key: "ARENA",
-      descEn: "Action proposals, execution path, and approvals.",
-      descZh: "动作提案、执行路径与确认审批。",
-      href: "/council?mode=arena",
-      active: true,
-    },
-    {
-      key: "BOARD",
-      descEn: "Task decomposition and collaborative battle board.",
-      descZh: "任务拆解与协同推进作战看板。",
-      href: "/council?mode=board",
-      active: true,
-    },
-    {
-      key: "MEMORY",
-      descEn: "Cross-session memory and knowledge graph context.",
-      descZh: "跨会话记忆与知识图谱上下文。",
-      href: "/council",
-      active: false,
-    },
-  ];
+  const modules = MENU_ITEMS.map((item) => ({
+    ...item,
+    href:
+      item.mode === "research"
+        ? "/council"
+        : `/council?mode=${item.mode}`,
+    active: item.mode !== "reasoning", // reasoning is still alpha
+  }));
 
   return (
     <main className="min-h-screen px-4 py-4 sm:px-6 sm:py-6">
+      {/* ── Top Bar ─────────────────────────────────────── */}
       <div className="agora-panel rounded-xl px-4 sm:px-5 py-3 flex items-center gap-3">
         <div>
           <p className="font-tech text-cyan-200 text-sm tracking-[0.3em]">AGORA</p>
@@ -59,6 +39,7 @@ export default function HomePage() {
       </div>
 
       <div className="mt-4 grid grid-cols-1 xl:grid-cols-[1.2fr_0.8fr] gap-4">
+        {/* ── Left: Hero + Module Cards ───────────────────── */}
         <motion.section
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
@@ -80,29 +61,49 @@ export default function HomePage() {
             <p className="mt-2">{t("home.quoteB")}</p>
           </blockquote>
 
-          <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {modules.map((module) => (
-              <Link
-                key={module.key}
-                href={module.href}
-                className="module-divider rounded-lg p-4 hover:scale-[1.01] transition-transform duration-200"
+          {/* ── Five Module Grid ──────────────────────────── */}
+          <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {modules.map((mod, index) => (
+              <motion.div
+                key={mod.mode}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.06, duration: 0.3 }}
               >
-                <div className="flex items-center justify-between gap-2">
-                  <span className="font-tech text-xs tracking-[0.2em] text-cyan-200">{module.key}</span>
+                <Link
+                  href={mod.href}
+                  className="home-module-card group block rounded-xl p-4 transition-all duration-300 hover:scale-[1.02]"
+                  style={{
+                    borderColor: `${mod.color}22`,
+                    ["--module-color" as string]: mod.color,
+                    ["--module-glow" as string]: mod.glow,
+                  }}
+                >
+                  <div className="flex items-start justify-between gap-2 mb-3">
+                    <div className="p-1.5 rounded-lg bg-white/[0.03] group-hover:bg-white/[0.06] transition-colors">
+                      <PixelIcon mode={mod.mode} size={4} />
+                    </div>
+                    <span
+                      className="text-[10px] px-2 py-0.5 rounded border"
+                      style={{
+                        borderColor: mod.active ? `${mod.color}50` : "rgba(245,158,11,0.4)",
+                        color: mod.active ? mod.color : "rgb(252,211,77)",
+                      }}
+                    >
+                      {mod.active ? t("home.moduleStatusActive") : t("home.moduleStatusAlpha")}
+                    </span>
+                  </div>
                   <span
-                    className={`text-[10px] px-2 py-0.5 rounded border ${
-                      module.active
-                        ? "border-emerald-500/50 text-emerald-300"
-                        : "border-amber-500/50 text-amber-300"
-                    }`}
+                    className="block font-tech text-xs tracking-[0.2em] transition-colors"
+                    style={{ color: mod.color }}
                   >
-                    {module.active ? t("home.moduleStatusActive") : t("home.moduleStatusAlpha")}
+                    {t(mod.labelKey)}
                   </span>
-                </div>
-                <p className="mt-2 text-sm text-slate-300/90 leading-relaxed">
-                  {locale === "zh-CN" ? module.descZh : module.descEn}
-                </p>
-              </Link>
+                  <p className="mt-1.5 text-[11px] text-slate-300/70 leading-relaxed">
+                    {t(mod.descKey)}
+                  </p>
+                </Link>
+              </motion.div>
             ))}
           </div>
 
@@ -116,6 +117,7 @@ export default function HomePage() {
           </div>
         </motion.section>
 
+        {/* ── Right: Wisdom Hall + System State ────────────── */}
         <motion.section
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}

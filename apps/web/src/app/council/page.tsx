@@ -10,7 +10,7 @@ import { useI18n } from "@/components/i18n/LanguageProvider";
 import type { PanelMode } from "@/types";
 
 export default function CouncilIndexPage() {
-  const [mode, setMode] = useState<PanelMode>("council");
+  const [mode, setMode] = useState<PanelMode>("research");
   const { t } = useI18n();
 
   const centerPlaceholder = (
@@ -35,7 +35,7 @@ export default function CouncilIndexPage() {
         left={<SessionSidebar />}
         center={centerPlaceholder}
         right={<GraphPanel sessionId={null} />}
-        workspaceLabel={t("command.council")}
+        workspaceLabel={t(`menu.${mode}`)}
       />
       <StatusStrip />
     </>
