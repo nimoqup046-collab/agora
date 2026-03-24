@@ -1,0 +1,29 @@
+name: Keep Render API Warm
+
+on:
+  schedule:
+    # Every 10 minutes to avoid free-tier cold starts during active development.
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+jobs:
+  ping-api:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Ping AGORA API health endpoint
+        run: |
+          set -euo pipefail
+          URL="https://agora-api-wryg.onrender.com/health"
+          echo "Pinging ${URL}"
+          for i in 1 2 3; do
+            code=$(curl -sS -o response.txt -w "%{http_code}" "${URL}" || true)
+            echo "Attempt ${i} HTTP ${code}"
+            cat response.txt || true
+            if [ "${code}" = "200" ]; then
+              exit 0
+            fi
+            sleep 20
+          done
+          echo "Health endpoint did not return 200 after retries."
+          exit 1

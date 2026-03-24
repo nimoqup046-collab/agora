@@ -32,20 +32,39 @@ export function SessionSidebar() {
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>("");
 
   useEffect(() => {
-    sessionsApi
-      .list()
-      .then((items) => {
+    let cancelled = false;
+    let retryTimer: ReturnType<typeof setTimeout> | undefined;
+
+    const loadSessionsWithRetry = async (attempt = 0) => {
+      try {
+        const items = await sessionsApi.list();
+        if (cancelled) return;
         setSessions(items);
         setLoadError(null);
-      })
-      .catch((err) => {
+      } catch (err) {
+        if (cancelled) return;
         console.error(err);
         setLoadError(t("sidebar.loadError"));
-      });
+
+        // Render free tier cold starts can take ~30-60s; keep retrying in background.
+        if (attempt < 12) {
+          retryTimer = setTimeout(() => {
+            void loadSessionsWithRetry(attempt + 1);
+          }, 5000);
+        }
+      }
+    };
+
+    void loadSessionsWithRetry();
 
     templatesApi.list().then(setTemplates).catch(() => {
-      // Templates are optional — fail silently
+      // Templates are optional; fail silently
     });
+
+    return () => {
+      cancelled = true;
+      if (retryTimer) clearTimeout(retryTimer);
+    };
   }, [setSessions, t]);
 
   const selectedTemplate = templates.find((t) => t.id === selectedTemplateId) ?? null;
@@ -62,11 +81,33 @@ export function SessionSidebar() {
   const canCreate =
     !isCreatingSession && (newTask.trim().length > 0 || selectedTemplateId !== "");
 
+  const isTransientBackendError = (err: unknown) => {
+    const text = err instanceof Error ? err.message : String(err);
+    return /API 50\d|bad gateway|application loading|timeout|network/i.test(text);
+  };
+
+  const createSessionWithRetry = async (
+    payload: Parameters<typeof sessionsApi.create>[0],
+    retries = 3
+  ) => {
+    let lastError: unknown;
+    for (let i = 0; i < retries; i += 1) {
+      try {
+        return await sessionsApi.create(payload);
+      } catch (err) {
+        lastError = err;
+        if (!isTransientBackendError(err) || i === retries - 1) throw err;
+        await new Promise((resolve) => setTimeout(resolve, 4000));
+      }
+    }
+    throw lastError ?? new Error("Session creation failed");
+  };
+
   const createSession = async () => {
     if (!canCreate) return;
     setIsCreatingSession(true);
     try {
-      const session = await sessionsApi.create({
+      const session = await createSessionWithRetry({
         title: newTask.trim() ? newTask.slice(0, 80) : selectedTemplate?.name,
         task: newTask.trim(),
         template_id: selectedTemplateId || undefined,
