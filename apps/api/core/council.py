@@ -111,6 +111,8 @@ class CouncilManager:
 
         if provider in ("openrouter", "zhipu", "deepseek"):
             _compat_key, _compat_url = compat_candidates[provider]
+        elif provider == "anthropic_openai":
+            _compat_key, _compat_url = (None, None)
         else:
             # auto mode priority: openrouter > zhipu > deepseek
             _compat_key, _compat_url = (None, None)
