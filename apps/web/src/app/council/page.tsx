@@ -7,6 +7,7 @@ import { StatusStrip } from "@/components/layout/StatusStrip";
 import { ResponsiveWorkbench } from "@/components/layout/ResponsiveWorkbench";
 import { GraphPanel } from "@/components/graph/GraphPanel";
 import { useI18n } from "@/components/i18n/LanguageProvider";
+import { MemoryOrb } from "@/components/layout/MemoryOrb";
 import type { PanelMode } from "@/types";
 
 export default function CouncilIndexPage() {
@@ -17,14 +18,10 @@ export default function CouncilIndexPage() {
     <div className="flex-1 flex flex-col items-center justify-center text-center text-slate-300 space-y-3 p-8">
       <div className="text-4xl font-tech text-cyan-300/70">[ ]</div>
       <h2 className="text-sm font-tech text-cyan-100 tracking-[0.16em] uppercase">
-        {t("council.selectSession")}
+        {t(`menu.${mode}`)} · {t("council.selectSession")}
       </h2>
-      <p className="text-xs max-w-sm text-slate-300/80">
-        {t("council.selectDesc")}
-      </p>
-      <p className="text-[11px] text-slate-400 max-w-xs font-wisdom">
-        {t("council.selectSub")}
-      </p>
+      <p className="text-xs max-w-sm text-slate-300/80">{t("council.selectDesc")}</p>
+      <p className="text-[11px] text-slate-400 max-w-xs font-wisdom">{t("council.selectSub")}</p>
     </div>
   );
 
@@ -38,6 +35,7 @@ export default function CouncilIndexPage() {
         workspaceLabel={t(`menu.${mode}`)}
       />
       <StatusStrip />
+      <MemoryOrb />
     </>
   );
 }
