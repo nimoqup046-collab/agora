@@ -23,6 +23,12 @@ export interface Session {
   participant_ids: string[];
   created_at: string;
   updated_at: string;
+  template?: {
+    id: string;
+    name: string;
+    category: string;
+    suggested_first_message?: string | null;
+  } | null;
 }
 
 export interface SessionMessage {
@@ -92,6 +98,14 @@ export interface HealthResponse {
   agents?: number;
 }
 
+export interface SessionTemplate {
+  id: string;
+  name: string;
+  category: "scientific" | "engineering" | "review" | string;
+  description: string;
+  suggested_first_message?: string;
+}
+
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const res = await fetch(`${API_URL}${path}`, {
     headers: { "Content-Type": "application/json" },
@@ -114,13 +128,53 @@ export const agentsApi = {
 export const sessionsApi = {
   list: () => request<{ sessions: Session[] }>("/sessions/").then((r) => r.sessions),
   get: (sessionId: string) => request<SessionDetail>(`/sessions/${sessionId}`),
-  create: (params: { title: string; task: string; participant_ids?: string[] }) =>
+  create: (params: { title?: string; task: string; participant_ids?: string[]; template_id?: string }) =>
     request<Session>("/sessions/", {
       method: "POST",
       body: JSON.stringify(params),
     }),
   delete: (sessionId: string) =>
     request<{ status: string }>(`/sessions/${sessionId}`, { method: "DELETE" }),
+};
+
+const FALLBACK_TEMPLATES: SessionTemplate[] = [
+  {
+    id: "scientific-hypothesis-lab",
+    name: "Scientific Hypothesis Lab",
+    category: "scientific",
+    description: "Use multi-agent debate to propose testable hypotheses and validation steps.",
+    suggested_first_message:
+      "请围绕该科学问题提出3个可验证假设，并给出实验/数据验证路径与风险点。",
+  },
+  {
+    id: "engineering-implementation-sprint",
+    name: "Engineering Implementation Sprint",
+    category: "engineering",
+    description: "Break down an engineering goal into architecture, milestones, and execution plan.",
+    suggested_first_message:
+      "请输出一个可落地的技术方案：架构、里程碑、风险、回滚方案、PR拆分建议。",
+  },
+  {
+    id: "code-review-war-room",
+    name: "Code Review War Room",
+    category: "review",
+    description: "Coordinate deep technical review and produce actionable improvement items.",
+    suggested_first_message:
+      "请从安全、性能、可维护性三方面审查方案，并给出可执行修复清单。",
+  },
+];
+
+export const templatesApi = {
+  list: async (): Promise<SessionTemplate[]> => {
+    try {
+      const data = await request<{ templates: SessionTemplate[] }>("/session-templates/");
+      if (Array.isArray(data.templates) && data.templates.length > 0) return data.templates;
+      return FALLBACK_TEMPLATES;
+    } catch {
+      // Template endpoint is optional in current backend phase.
+      return FALLBACK_TEMPLATES;
+    }
+  },
 };
 
 export const councilApi = {
