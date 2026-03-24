@@ -17,6 +17,7 @@ from .base import (
 from .claude_adapter import ClaudeAdapter
 from .codex_adapter import CodexAdapter
 from .meta_agent import MetaAgent
+from .evolutor_agent import EvolutorAgent, SoulDraft
 from .github_client import GitHubClient, PRResult
 
 __all__ = [
@@ -32,6 +33,8 @@ __all__ = [
     "ClaudeAdapter",
     "CodexAdapter",
     "MetaAgent",
+    "EvolutorAgent",
+    "SoulDraft",
     "GitHubClient",
     "PRResult",
 ]

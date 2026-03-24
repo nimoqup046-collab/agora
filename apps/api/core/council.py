@@ -16,7 +16,7 @@ if os.path.isdir(_PKG_PATH) and _PKG_PATH not in sys.path:
 
 import asyncpg
 
-from adapter import ClaudeAdapter, CodexAdapter, MetaAgent, IAgent
+from adapter import ClaudeAdapter, CodexAdapter, MetaAgent, EvolutorAgent, IAgent
 from adapter.github_client import GitHubClient
 from orchestrator.session import SessionStore, Session
 from orchestrator.session_postgres import PostgresSessionStore
@@ -37,6 +37,8 @@ class CouncilManager:
         self.consensus = ConsensusEngine()
         self.memory = None       # Set in initialize() when pool available
         self.github: Optional[GitHubClient] = None
+        self.souls = None        # SoulStore — set in initialize() when pool available
+        self.evolutor: Optional[EvolutorAgent] = None
         self._initialized = False
 
     def initialize(self, pool: Optional[asyncpg.Pool] = None) -> None:
@@ -76,6 +78,15 @@ class CouncilManager:
             except Exception as e:
                 print(f"[council] Memory init failed: {e} — running without memory")
                 self.memory = None
+
+        # ── Soul store (Evolution Engine) ─────────────────────────────────
+        if pool:
+            try:
+                from orchestrator.soul_store import SoulStore
+                self.souls = SoulStore(pool)
+            except Exception as e:
+                print(f"[council] SoulStore init failed: {e}")
+                self.souls = None
 
         # ── GitHub client ──────────────────────────────────────────────────
         if settings.github_token and settings.github_default_owner:
@@ -134,7 +145,27 @@ class CouncilManager:
         )
         self._agents[meta.agent_id] = meta
 
+        # ── Evolutor ───────────────────────────────────────────────────────
+        self.evolutor = EvolutorAgent(
+            model=settings.default_model_meta,
+            api_key=_compat_key or settings.anthropic_api_key or None,
+            base_url=_compat_url,
+        )
+
         self._initialized = True
+
+    async def load_latest_souls(self) -> None:
+        """Load the latest approved SOUL for each agent and update their system prompts."""
+        if not self.souls:
+            return
+        for agent_id, agent in self._agents.items():
+            try:
+                soul = await self.souls.get_latest_approved(agent_id)
+                if soul:
+                    agent.system_prompt = soul.soul_content
+                    print(f"[council] Loaded soul v{soul.version} for {agent_id}")
+            except Exception as e:
+                print(f"[council] Soul load failed for {agent_id}: {e}")
 
     def get_agent(self, agent_id: str) -> Optional[IAgent]:
         return self._agents.get(agent_id)

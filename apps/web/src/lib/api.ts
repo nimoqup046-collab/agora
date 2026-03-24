@@ -174,6 +174,52 @@ export const councilApi = {
     `${API_URL}/council/${sessionId}/stream?user_message=${encodeURIComponent(userMessage)}&turns=${turns}`,
 };
 
+// ── Evolution ─────────────────────────────────────────────────────────────────
+
+export interface Soul {
+  id: string;
+  agent_id: string;
+  version: number;
+  soul_content: string;
+  delta_summary: string;
+  trigger_session_ids: string[];
+  created_at: string;
+  approved_at: string | null;
+  approved_by: string | null;
+}
+
+export interface EvolutionTriggerResponse {
+  drafts: Array<{
+    agent_id: string;
+    soul_id: string;
+    delta_summary: string;
+    version: number;
+  }>;
+  sessions_analyzed: number;
+  agents_evolved: number;
+}
+
+export const evolutionApi = {
+  trigger: (sessionCount = 10) =>
+    request<EvolutionTriggerResponse>("/evolution/trigger", {
+      method: "POST",
+      body: JSON.stringify({ session_count: sessionCount }),
+    }),
+
+  listSouls: (agentId: string) =>
+    request<{ agent_id: string; agent_name: string; souls: Soul[]; current_version: number }>(
+      `/evolution/souls/${agentId}`
+    ),
+
+  approveSoul: (soulId: string) =>
+    request<{ soul: Soul; agent_id: string; activated: boolean }>(
+      `/evolution/souls/${soulId}/approve`,
+      { method: "POST" }
+    ),
+};
+
+// ── Health ────────────────────────────────────────────────────────────────────
+
 export const healthApi = {
   check: () => request<HealthResponse>("/health"),
 };

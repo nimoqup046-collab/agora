@@ -2,7 +2,7 @@
  * AGORA shared frontend types.
  */
 
-export type PanelMode = 'council' | 'arena' | 'board'
+export type PanelMode = 'council' | 'arena' | 'board' | 'evolution'
 
 export interface Subtask {
   id: string | number
