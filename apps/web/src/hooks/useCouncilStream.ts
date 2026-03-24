@@ -46,12 +46,27 @@ export function useCouncilStream(sessionId: string) {
           clearStreamingAgent(event.agent_id as string);
           break;
 
+        case "error": {
+          const agentId = (event.agent_id as string) || "system";
+          const agentName = (event.agent_name as string) || "System";
+          const errorText = (event.error as string) || "Unknown streaming error";
+          clearStreamingAgent(agentId);
+          addMessage({
+            id: `error-${agentId}-${Date.now()}`,
+            agent_id: agentId,
+            agent_name: agentName,
+            content: `[ERROR] ${errorText}`,
+            timestamp: new Date().toISOString(),
+          });
+          break;
+        }
+
         case "round_complete":
           clearAllStreaming();
           break;
       }
     },
-    [setStreamingToken, clearStreamingAgent, clearAllStreaming]
+    [setStreamingToken, clearStreamingAgent, clearAllStreaming, addMessage]
   );
 
   const sendMessage = useCallback(
@@ -76,6 +91,10 @@ export function useCouncilStream(sessionId: string) {
 
       try {
         const res = await fetch(url, { signal: ctrl.signal });
+        if (!res.ok) {
+          const errText = await res.text();
+          throw new Error(`SSE ${res.status}: ${errText}`);
+        }
         if (!res.body) throw new Error("No response body");
 
         const reader = res.body.getReader();
@@ -106,6 +125,13 @@ export function useCouncilStream(sessionId: string) {
       } catch (err: unknown) {
         if (err instanceof Error && err.name !== "AbortError") {
           console.error("SSE error:", err);
+          addMessage({
+            id: `client-error-${Date.now()}`,
+            agent_id: "system",
+            agent_name: "System",
+            content: `[ERROR] ${err.message}`,
+            timestamp: new Date().toISOString(),
+          });
         }
       } finally {
         // Flush any remaining streaming agents as completed messages

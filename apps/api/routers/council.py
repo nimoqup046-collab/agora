@@ -106,6 +106,22 @@ def _fire_memory_store(session_id: str, agent_id: str, content: str) -> None:
         )
 
 
+def _llm_error_hint(err: Exception) -> str:
+    """
+    Convert upstream model-provider errors into concise actionable text for clients.
+    """
+    raw = str(err)
+    lowered = raw.lower()
+
+    if "insufficient balance" in lowered or "402" in lowered:
+        return "Model provider balance is insufficient. Please recharge your API account."
+    if "invalid api key" in lowered or "unauthorized" in lowered or "authentication" in lowered or "401" in lowered:
+        return "Model provider API key is invalid or missing. Check OPENROUTER_API_KEY / DEEPSEEK_API_KEY / ANTHROPIC_API_KEY / OPENAI_API_KEY."
+    if "model" in lowered and ("not found" in lowered or "does not exist" in lowered):
+        return "Configured model name is invalid. Check DEFAULT_MODEL_CLAUDE / DEFAULT_MODEL_CODEX / DEFAULT_MODEL_META."
+    return f"Upstream model provider error: {raw}"
+
+
 # ── Endpoints ──────────────────────────────────────────────────────────────────
 
 @router.post("/{session_id}/message")
@@ -129,7 +145,10 @@ async def send_message(session_id: str, body: UserMessage):
     memory_msgs = await _enrich_with_memory(session_id, agent_id, body.content)
     messages = memory_msgs + _build_agent_messages(history)
 
-    response = await agent.think(messages)
+    try:
+        response = await agent.think(messages)
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=_llm_error_hint(e))
 
     msg = await council.sessions.add_message(
         session_id, agent.agent_id, agent.name,
@@ -155,10 +174,10 @@ async def stream_round(session_id: str, user_message: str, turns: int = 1):
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
 
-    async def event_generator() -> AsyncIterator[str]:
+    async def event_generator() -> AsyncIterator[dict[str, str]]:
         # Record user message
         await council.sessions.add_message(session_id, "user", "User", user_message)
-        yield f"data: {json.dumps({'type': 'session_start', 'session_id': session_id})}\n\n"
+        yield {"data": json.dumps({"type": "session_start", "session_id": session_id})}
 
         turn_engine = council.build_turn_engine(session, TurnStrategy.CONDUCTOR_LED)
         total_turns = turns * len(session.participant_ids)
@@ -175,15 +194,33 @@ async def stream_round(session_id: str, user_message: str, turns: int = 1):
             memory_msgs = await _enrich_with_memory(session_id, turn.agent_id, user_message)
             messages = memory_msgs + _build_agent_messages(history)
 
-            yield f"data: {json.dumps({'type': 'agent_start', 'agent_id': turn.agent_id, 'agent_name': agent.name, 'turn': turn_num + 1})}\n\n"
+            yield {
+                "data": json.dumps(
+                    {
+                        "type": "agent_start",
+                        "agent_id": turn.agent_id,
+                        "agent_name": agent.name,
+                        "turn": turn_num + 1,
+                    }
+                )
+            }
 
             full_response: list[str] = []
             try:
                 async for token in agent.think_stream(messages):
                     full_response.append(token)
-                    yield f"data: {json.dumps({'type': 'token', 'agent_id': turn.agent_id, 'token': token})}\n\n"
+                    yield {"data": json.dumps({"type": "token", "agent_id": turn.agent_id, "token": token})}
             except Exception as e:
-                yield f"data: {json.dumps({'type': 'error', 'agent_id': turn.agent_id, 'error': str(e)})}\n\n"
+                yield {
+                    "data": json.dumps(
+                        {
+                            "type": "error",
+                            "agent_id": turn.agent_id,
+                            "agent_name": agent.name,
+                            "error": _llm_error_hint(e),
+                        }
+                    )
+                }
                 continue
 
             complete = "".join(full_response)
@@ -192,11 +229,19 @@ async def stream_round(session_id: str, user_message: str, turns: int = 1):
             )
             _fire_memory_store(session_id, agent.agent_id, complete)
 
-            yield f"data: {json.dumps({'type': 'agent_done', 'agent_id': turn.agent_id, 'agent_name': agent.name})}\n\n"
+            yield {
+                "data": json.dumps(
+                    {
+                        "type": "agent_done",
+                        "agent_id": turn.agent_id,
+                        "agent_name": agent.name,
+                    }
+                )
+            }
             await asyncio.sleep(0.05)
 
-        yield f"data: {json.dumps({'type': 'round_complete', 'turn_count': turn_engine.turn_count})}\n\n"
-        yield "data: [DONE]\n\n"
+        yield {"data": json.dumps({"type": "round_complete", "turn_count": turn_engine.turn_count})}
+        yield {"data": "[DONE]"}
 
     return EventSourceResponse(event_generator())
 
@@ -237,7 +282,7 @@ async def run_round(session_id: str, body: UserMessage):
                 "content": response.content,
             })
         except Exception as e:
-            responses.append({"agent_id": turn.agent_id, "error": str(e)})
+            responses.append({"agent_id": turn.agent_id, "error": _llm_error_hint(e)})
 
     return {"responses": responses, "turn_count": turn_engine.turn_count}
 
