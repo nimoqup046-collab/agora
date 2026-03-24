@@ -97,20 +97,31 @@ class CouncilManager:
             )
 
         # ── Agents ─────────────────────────────────────────────────────────
-        # Priority: OpenRouter > DeepSeek > Anthropic/OpenAI
-        _compat_key = (
-            settings.openrouter_api_key
-            or settings.deepseek_api_key
-            or None
-        )
-        _compat_url = (
-            "https://openrouter.ai/api/v1" if settings.openrouter_api_key
-            else "https://api.deepseek.com" if settings.deepseek_api_key
-            else None
-        )
+        # OpenAI-compatible providers:
+        # - OpenRouter: https://openrouter.ai/api/v1
+        # - Zhipu GLM: https://open.bigmodel.cn/api/paas/v4
+        # - DeepSeek:  https://api.deepseek.com
+        provider = (settings.llm_provider or "auto").strip().lower()
+
+        compat_candidates = {
+            "openrouter": (settings.openrouter_api_key or None, "https://openrouter.ai/api/v1"),
+            "zhipu": (settings.zhipu_api_key or None, "https://open.bigmodel.cn/api/paas/v4"),
+            "deepseek": (settings.deepseek_api_key or None, "https://api.deepseek.com"),
+        }
+
+        if provider in ("openrouter", "zhipu", "deepseek"):
+            _compat_key, _compat_url = compat_candidates[provider]
+        else:
+            # auto mode priority: openrouter > zhipu > deepseek
+            _compat_key, _compat_url = (None, None)
+            for p in ("openrouter", "zhipu", "deepseek"):
+                key, url = compat_candidates[p]
+                if key:
+                    _compat_key, _compat_url = key, url
+                    break
 
         if _compat_key:
-            # OpenAI-compatible mode (OpenRouter / DeepSeek)
+            # OpenAI-compatible mode (OpenRouter / Zhipu / DeepSeek)
             claude = CodexAdapter(
                 agent_id="claude-architect",
                 name="Claude",

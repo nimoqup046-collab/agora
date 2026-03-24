@@ -11,8 +11,11 @@ class Settings(BaseSettings):
     debug: bool = False
     log_level: str = "INFO"
 
-    # API Keys（优先级：openrouter > deepseek > anthropic/openai）
+    # API keys and provider selector
+    # llm_provider: auto | openrouter | zhipu | deepseek | anthropic_openai
+    llm_provider: str = "auto"
     openrouter_api_key: str = ""
+    zhipu_api_key: str = ""
     deepseek_api_key: str = ""
     anthropic_api_key: str = ""
     openai_api_key: str = ""
@@ -43,9 +46,9 @@ class Settings(BaseSettings):
     api_cors_origins: str = "http://localhost:3000"
 
     # Council defaults
-    default_model_claude: str = "claude-opus-4-6"   # or deepseek-chat
-    default_model_codex: str = "gpt-4o"             # or deepseek-chat
-    default_model_meta: str = "claude-sonnet-4-6"   # or deepseek-chat
+    default_model_claude: str = "claude-opus-4-6"
+    default_model_codex: str = "gpt-4o"
+    default_model_meta: str = "claude-sonnet-4-6"
     max_turns_per_session: int = 20
     session_timeout_seconds: int = 3600
 

@@ -11,6 +11,7 @@ This guide deploys AGORA to public internet using:
 2. Create an Upstash Redis instance and copy its `REDIS_URL`.
 3. Prepare at least one model provider key:
 - `OPENROUTER_API_KEY` (recommended)
+- `ZHIPU_API_KEY` (GLM, low-cost option)
 - or `DEEPSEEK_API_KEY`
 - or `ANTHROPIC_API_KEY` + `OPENAI_API_KEY`
 
@@ -27,7 +28,12 @@ Set these in Render for the API service:
 
 - `DATABASE_URL` (required)
 - `REDIS_URL` (required)
-- `OPENROUTER_API_KEY` or `DEEPSEEK_API_KEY` or `ANTHROPIC_API_KEY` + `OPENAI_API_KEY`
+- `OPENROUTER_API_KEY` or `ZHIPU_API_KEY` or `DEEPSEEK_API_KEY` or `ANTHROPIC_API_KEY` + `OPENAI_API_KEY`
+- `LLM_PROVIDER` (optional, recommended when testing multiple low-cost providers)
+  - `zhipu` to force GLM
+  - `deepseek` to force DeepSeek
+  - `openrouter` to force OpenRouter
+  - `auto` (default): OpenRouter > Zhipu > DeepSeek > Anthropic/OpenAI
 - `API_CORS_ORIGINS` (required for browser access)
 - `DEFAULT_MODEL_CLAUDE` (optional, default `deepseek-chat`)
 - `DEFAULT_MODEL_CODEX` (optional, default `deepseek-chat`)
@@ -55,6 +61,26 @@ Important: this must point to the public API URL.
 2. Open `https://<your-web-service>.onrender.com`.
 3. Create a session in the GUI.
 4. Send a message in Council mode and confirm responses stream in.
+
+### Suggested low-cost test profiles
+
+#### A) DeepSeek only
+```bash
+LLM_PROVIDER=deepseek
+DEEPSEEK_API_KEY=sk-...
+DEFAULT_MODEL_CLAUDE=deepseek-chat
+DEFAULT_MODEL_CODEX=deepseek-chat
+DEFAULT_MODEL_META=deepseek-chat
+```
+
+#### B) Zhipu GLM only
+```bash
+LLM_PROVIDER=zhipu
+ZHIPU_API_KEY=...
+DEFAULT_MODEL_CLAUDE=glm-4-flash
+DEFAULT_MODEL_CODEX=glm-4-flash
+DEFAULT_MODEL_META=glm-4-flash
+```
 
 ## 6) Common issues
 
