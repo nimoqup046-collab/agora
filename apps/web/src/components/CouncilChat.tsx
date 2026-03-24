@@ -6,6 +6,7 @@ import { sessionsApi } from "@/lib/api";
 import { useCouncilStream } from "@/hooks/useCouncilStream";
 import { MessageFeed } from "@/components/council/MessageFeed";
 import { SectionHeader } from "@/components/common/SectionHeader";
+import { useI18n } from "@/components/i18n/LanguageProvider";
 
 interface CouncilChatProps {
   sessionId: string;
@@ -13,6 +14,7 @@ interface CouncilChatProps {
 
 export function CouncilChat({ sessionId }: CouncilChatProps) {
   const { setMessages } = useAgoraStore();
+  const { t } = useI18n();
   const { sendMessage, stop, isStreaming } = useCouncilStream(sessionId);
 
   const [input, setInput] = useState("");
@@ -33,10 +35,10 @@ export function CouncilChat({ sessionId }: CouncilChatProps) {
   return (
     <div className="flex flex-col h-full">
       <SectionHeader
-        title="COUNCIL FEED"
+        title={t("council.feed")}
         right={
-          <span className="text-[10px] text-slate-600 font-mono">
-            {isStreaming ? "DELIBERATING" : "READY"}
+          <span className="text-[10px] text-slate-300 font-tech tracking-[0.12em]">
+            {isStreaming ? t("council.deliberating") : t("council.ready")}
           </span>
         }
       />
@@ -45,7 +47,7 @@ export function CouncilChat({ sessionId }: CouncilChatProps) {
 
       <form
         onSubmit={handleSubmit}
-        className="border-t border-agora-border bg-agora-surface/80 p-3 space-y-2 shrink-0"
+        className="border-t border-agora-border/70 module-divider p-3 space-y-2 shrink-0"
       >
         <div className="flex gap-2">
           <textarea
@@ -57,10 +59,10 @@ export function CouncilChat({ sessionId }: CouncilChatProps) {
                 handleSubmit(e as unknown as React.FormEvent);
               }
             }}
-            placeholder="Describe a hard problem for the council..."
+            placeholder={t("council.describe")}
             disabled={isStreaming}
             rows={2}
-            className="flex-1 bg-agora-bg border border-agora-border rounded px-3 py-2 text-sm text-slate-200 placeholder-slate-600 resize-none focus:outline-none focus:border-agora-accent/60 disabled:opacity-50"
+            className="flex-1 bg-[#090f1f] border border-agora-border rounded px-3 py-2 text-sm text-slate-100 placeholder-slate-500 resize-none focus:outline-none focus:border-cyan-300/65 disabled:opacity-50"
           />
 
           <div className="flex flex-col gap-1">
@@ -68,26 +70,26 @@ export function CouncilChat({ sessionId }: CouncilChatProps) {
               <button
                 type="button"
                 onClick={stop}
-                className="px-3 py-2 rounded bg-rose-800/80 text-white text-xs hover:bg-rose-700 transition-colors"
+                className="px-3 py-2 rounded bg-rose-500/20 border border-rose-300/60 text-rose-100 text-xs hover:bg-rose-500/30 transition-colors"
               >
-                Stop
+                {t("council.stop")}
               </button>
             ) : (
               <button
                 type="submit"
                 disabled={!input.trim()}
-                className="px-3 py-2 rounded bg-agora-accent text-white text-xs hover:bg-agora-accent/90 transition-colors disabled:opacity-40"
+                className="px-3 py-2 rounded bg-cyan-500/20 border border-cyan-300/60 text-cyan-100 text-xs hover:bg-cyan-500/30 transition-colors disabled:opacity-40"
               >
-                Send
+                {t("council.send")}
               </button>
             )}
 
-            <div className="flex items-center gap-1 text-[10px] text-slate-600">
-              <span>Turns:</span>
+            <div className="flex items-center gap-1 text-[10px] text-slate-400">
+              <span>{t("council.turns")}:</span>
               <select
                 value={turns}
                 onChange={(e) => setTurns(Number(e.target.value))}
-                className="bg-agora-bg border border-agora-border rounded px-1 py-0.5 text-slate-300 text-[10px]"
+                className="bg-[#090f1f] border border-agora-border rounded px-1 py-0.5 text-slate-300 text-[10px]"
               >
                 {[1, 2, 3].map((n) => (
                   <option key={n} value={n}>{n}</option>
@@ -97,10 +99,10 @@ export function CouncilChat({ sessionId }: CouncilChatProps) {
           </div>
         </div>
 
-        <p className="text-[10px] text-slate-700">
+        <p className="text-[10px] text-slate-400">
           {isStreaming
-            ? "Council is deliberating..."
-            : "Enter to send, Shift+Enter for newline."}
+            ? t("council.streaming")
+            : t("council.enterHint")}
         </p>
       </form>
     </div>

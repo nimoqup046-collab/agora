@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { clsx } from "clsx";
 import { PanelGroup } from "@/components/layout/PanelGroup";
+import { useI18n } from "@/components/i18n/LanguageProvider";
 
 type MobileTab = "sessions" | "workspace" | "graph";
 
@@ -13,12 +14,6 @@ interface ResponsiveWorkbenchProps {
   workspaceLabel?: string;
 }
 
-const MOBILE_TABS: Array<{ key: MobileTab; label: string }> = [
-  { key: "sessions", label: "Sessions" },
-  { key: "workspace", label: "Workspace" },
-  { key: "graph", label: "Graph" },
-];
-
 export function ResponsiveWorkbench({
   left,
   center,
@@ -26,6 +21,13 @@ export function ResponsiveWorkbench({
   workspaceLabel = "Workspace",
 }: ResponsiveWorkbenchProps) {
   const [mobileTab, setMobileTab] = useState<MobileTab>("workspace");
+  const { t } = useI18n();
+
+  const mobileTabs: Array<{ key: MobileTab; label: string }> = [
+    { key: "sessions", label: t("command.sessions") },
+    { key: "workspace", label: t("command.workspace") },
+    { key: "graph", label: t("command.graph") },
+  ];
 
   return (
     <>
@@ -34,18 +36,18 @@ export function ResponsiveWorkbench({
       </div>
 
       <div className="lg:hidden flex flex-1 flex-col overflow-hidden">
-        <div className="h-10 border-b border-agora-border bg-agora-surface/80 px-2 flex items-center gap-1 shrink-0">
-          {MOBILE_TABS.map((tab) => {
+        <div className="h-10 module-divider px-2 flex items-center gap-1 shrink-0">
+          {mobileTabs.map((tab) => {
             const label = tab.key === "workspace" ? workspaceLabel : tab.label;
             return (
               <button
                 key={tab.key}
                 onClick={() => setMobileTab(tab.key)}
                 className={clsx(
-                  "px-3 py-1 text-[10px] rounded font-semibold tracking-wider border transition-colors",
+                  "px-3 py-1 text-[10px] rounded font-semibold tracking-[0.12em] border transition-colors",
                   mobileTab === tab.key
-                    ? "text-agora-accent bg-agora-accent/10 border-agora-accent/40"
-                    : "text-slate-500 border-transparent"
+                    ? "text-cyan-100 bg-cyan-500/15 border-cyan-400/40"
+                    : "text-slate-400 border-transparent"
                 )}
               >
                 {label}

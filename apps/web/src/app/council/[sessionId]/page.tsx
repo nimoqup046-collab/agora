@@ -15,6 +15,7 @@ import { ArenaPanel } from "@/components/arena/ArenaPanel";
 import { TaskBoard } from "@/components/board/TaskBoard";
 import { EvolutionPanel } from "@/components/arena/EvolutionPanel";
 import { GraphPanel } from "@/components/graph/GraphPanel";
+import { useI18n } from "@/components/i18n/LanguageProvider";
 
 import type { PanelMode } from "@/types";
 
@@ -25,6 +26,7 @@ interface SessionPageProps {
 export default function SessionPage({ params }: SessionPageProps) {
   const { sessionId } = use(params);
   const { setCurrentSessionId, sessions } = useAgoraStore();
+  const { t } = useI18n();
   const searchParams = useSearchParams();
   const router = useRouter();
 
@@ -69,12 +71,13 @@ export default function SessionPage({ params }: SessionPageProps) {
     <AnimatePresence mode="wait" initial={false}>
       <motion.div
         key={mode}
-        className="flex-1 flex flex-col overflow-hidden"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        transition={{ duration: 0.15 }}
+        className="relative flex-1 flex flex-col overflow-hidden"
+        initial={{ opacity: 0, scale: 0.98, filter: "blur(8px)" }}
+        animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
+        exit={{ opacity: 0, scale: 1.02, filter: "blur(8px)" }}
+        transition={{ duration: 0.22, ease: "easeOut" }}
       >
+        <span className="mode-warp" />
         {mode === "council" && <CouncilChat sessionId={sessionId} />}
         {mode === "arena" && <ArenaPanel sessionId={sessionId} />}
         {mode === "board" && <TaskBoard sessionId={sessionId} />}
@@ -94,7 +97,15 @@ export default function SessionPage({ params }: SessionPageProps) {
         left={<SessionSidebar />}
         center={centerPanel}
         right={<GraphPanel sessionId={sessionId} />}
-        workspaceLabel={mode.toUpperCase()}
+        workspaceLabel={
+          mode === "council"
+            ? t("command.council")
+            : mode === "arena"
+              ? t("command.arena")
+              : mode === "board"
+                ? t("command.board")
+                : t("command.evolution")
+        }
       />
       <StatusStrip />
     </>

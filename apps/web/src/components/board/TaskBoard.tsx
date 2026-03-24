@@ -4,30 +4,31 @@ import { useAgoraStore } from "@/lib/store";
 import { DecomposeButton } from "./DecomposeButton";
 import { TaskCard } from "./TaskCard";
 import { SectionHeader } from "@/components/common/SectionHeader";
+import { useI18n } from "@/components/i18n/LanguageProvider";
 import type { Subtask } from "@/types";
 
 interface TaskBoardProps {
   sessionId: string;
 }
 
-const COLUMNS: { key: Subtask["status"]; label: string }[] = [
-  { key: "pending", label: "PENDING" },
-  { key: "in_progress", label: "IN PROGRESS" },
-  { key: "done", label: "DONE" },
-];
-
 export function TaskBoard({ sessionId }: TaskBoardProps) {
+  const { t } = useI18n();
   const { tasks, updateTaskStatus } = useAgoraStore();
+  const columns: { key: Subtask["status"]; label: string }[] = [
+    { key: "pending", label: t("board.pending") },
+    { key: "in_progress", label: t("board.inProgress") },
+    { key: "done", label: t("board.done") },
+  ];
 
   return (
     <div className="flex flex-col h-full overflow-hidden relative">
       <SectionHeader
-        title="TASK BOARD"
+        title={t("board.title")}
         right={<DecomposeButton sessionId={sessionId} />}
       />
 
       <div className="flex-1 overflow-hidden flex gap-0">
-        {COLUMNS.map(({ key, label }) => {
+        {columns.map(({ key, label }) => {
           const colTasks = tasks.filter((t) => t.status === key);
           return (
             <div key={key} className="flex-1 flex flex-col overflow-hidden border-r border-agora-border last:border-r-0">
@@ -54,8 +55,8 @@ export function TaskBoard({ sessionId }: TaskBoardProps) {
 
       {tasks.length === 0 && (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none mt-20 px-6">
-          <p className="text-xs text-slate-700 text-center">
-            Click DECOMPOSE to generate tasks from the current session context.
+          <p className="text-xs text-slate-400 text-center font-wisdom">
+            {t("board.empty")}
           </p>
         </div>
       )}

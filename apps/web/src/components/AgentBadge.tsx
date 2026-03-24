@@ -3,10 +3,10 @@
 import { clsx } from "clsx";
 
 const AGENT_COLORS: Record<string, string> = {
-  "claude-architect": "border-amber-600 text-amber-500 bg-amber-600/10",
-  "codex-implementer": "border-emerald-600 text-emerald-400 bg-emerald-600/10",
-  "meta-conductor": "border-violet-500 text-violet-400 bg-violet-500/10",
-  user: "border-slate-600 text-slate-400 bg-slate-600/10",
+  "claude-architect": "border-amber-500/50 text-amber-200 bg-amber-500/10",
+  "codex-implementer": "border-emerald-500/50 text-emerald-200 bg-emerald-500/10",
+  "meta-conductor": "border-violet-500/50 text-violet-200 bg-violet-500/10",
+  user: "border-cyan-500/45 text-cyan-100 bg-cyan-500/10",
 };
 
 const AGENT_DOTS: Record<string, string> = {
@@ -35,7 +35,7 @@ export function AgentBadge({
   return (
     <span
       className={clsx(
-        "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs border font-medium",
+        "inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-xs border font-tech tracking-[0.08em]",
         colorClass,
         className
       )}

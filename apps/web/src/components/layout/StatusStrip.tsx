@@ -3,11 +3,13 @@
 import { useEffect, useState } from "react";
 import { useAgoraStore } from "@/lib/store";
 import { healthApi } from "@/lib/api";
+import { useI18n } from "@/components/i18n/LanguageProvider";
 
 type HealthState = "checking" | "online" | "offline";
 
 export function StatusStrip() {
   const { memoryCount, prCount, messages, isStreaming } = useAgoraStore();
+  const { t } = useI18n();
   const [apiHealth, setApiHealth] = useState<HealthState>("checking");
   const [agentCount, setAgentCount] = useState<number | null>(null);
 
@@ -43,20 +45,27 @@ export function StatusStrip() {
         ? "text-rose-400"
         : "text-amber-400";
 
-  return (
-    <div className="h-6 shrink-0 bg-agora-surface/80 border-t border-agora-border flex items-center px-3 sm:px-4 gap-3 sm:gap-4">
-      <span className="text-[10px] text-slate-600 font-mono">MSGS: {messages.length}</span>
-      <span className="text-[10px] text-slate-600 font-mono">MEM: {memoryCount}</span>
-      <span className="text-[10px] text-slate-600 font-mono">PRS: {prCount}</span>
+  const healthLabel =
+    apiHealth === "online"
+      ? t("status.online")
+      : apiHealth === "offline"
+        ? t("status.offline")
+        : t("status.checking");
 
-      <span className={`text-[10px] font-mono ${healthClass}`}>
-        API: {apiHealth.toUpperCase()}
+  return (
+    <div className="h-8 shrink-0 module-divider border-t border-agora-border/70 flex items-center px-3 sm:px-4 gap-3 sm:gap-4">
+      <span className="text-[10px] text-slate-300 font-tech">{t("status.msgs")}: {messages.length}</span>
+      <span className="text-[10px] text-slate-300 font-tech">{t("status.mem")}: {memoryCount}</span>
+      <span className="text-[10px] text-slate-300 font-tech">{t("status.prs")}: {prCount}</span>
+
+      <span className={`text-[10px] font-tech ${healthClass}`}>
+        {t("status.api")}: {healthLabel}
         {agentCount !== null ? ` (${agentCount})` : ""}
       </span>
 
       <div className="ml-auto flex items-center gap-1">
-        <span className="text-[10px] text-slate-700 font-mono">
-          {isStreaming ? "DELIBERATING..." : "READY"}
+        <span className="text-[10px] text-slate-300 font-tech">
+          {isStreaming ? t("status.deliberating") : t("status.ready")}
         </span>
       </div>
     </div>
