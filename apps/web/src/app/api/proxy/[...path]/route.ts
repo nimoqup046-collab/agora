@@ -24,6 +24,13 @@ function isColdStartResponse(status: number, body: string) {
   );
 }
 
+function isRenderWarmupHtml(contentType: string, body: string) {
+  if (!contentType.includes("text/html")) return false;
+  return /application is starting|application loading|render|deploying|service unavailable/i.test(
+    body
+  );
+}
+
 async function forward(request: NextRequest, path: string[]) {
   const upstream = new URL(`${resolveApiBase()}/${path.join("/")}`);
   request.nextUrl.searchParams.forEach((value, key) => {
@@ -62,6 +69,23 @@ async function forward(request: NextRequest, path: string[]) {
         const text = await response.clone().text().catch(() => "");
         if (isColdStartResponse(response.status, text)) {
           continue;
+        }
+      }
+
+      if (RETRYABLE_METHODS.has(method)) {
+        const contentType = (response.headers.get("content-type") || "").toLowerCase();
+        if (contentType.includes("text/html")) {
+          const text = await response.clone().text().catch(() => "");
+          if (attempt < maxAttempts - 1 && isRenderWarmupHtml(contentType, text)) {
+            continue;
+          }
+          return Response.json(
+            {
+              detail:
+                "Upstream API returned HTML while warming up. Please retry in a few seconds.",
+            },
+            { status: 503 }
+          );
         }
       }
 

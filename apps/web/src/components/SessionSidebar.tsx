@@ -83,7 +83,9 @@ export function SessionSidebar() {
 
   const isTransientBackendError = (err: unknown) => {
     const text = err instanceof Error ? err.message : String(err);
-    return /API 50\d|bad gateway|application loading|timeout|network/i.test(text);
+    return /API 50\d|bad gateway|application loading|timeout|network|invalid json response|service unavailable|upstream/i.test(
+      text
+    );
   };
 
   const createSessionWithRetry = async (

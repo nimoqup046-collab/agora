@@ -114,12 +114,18 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     ...options,
   });
 
+  const raw = await res.text();
   if (!res.ok) {
-    const err = await res.text();
-    throw new Error(`API ${res.status}: ${err}`);
+    throw new Error(`API ${res.status}: ${raw}`);
   }
 
-  return res.json();
+  try {
+    return JSON.parse(raw) as T;
+  } catch {
+    throw new Error(
+      `API ${res.status}: invalid JSON response (path=${path}, sample=${raw.slice(0, 180)})`
+    );
+  }
 }
 
 export const agentsApi = {
