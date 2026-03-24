@@ -88,7 +88,7 @@ export function SessionSidebar() {
 
   const createSessionWithRetry = async (
     payload: Parameters<typeof sessionsApi.create>[0],
-    retries = 3
+    retries = 12
   ) => {
     let lastError: unknown;
     for (let i = 0; i < retries; i += 1) {
@@ -97,7 +97,7 @@ export function SessionSidebar() {
       } catch (err) {
         lastError = err;
         if (!isTransientBackendError(err) || i === retries - 1) throw err;
-        await new Promise((resolve) => setTimeout(resolve, 4000));
+        await new Promise((resolve) => setTimeout(resolve, 5000));
       }
     }
     throw lastError ?? new Error("Session creation failed");

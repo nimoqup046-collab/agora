@@ -15,26 +15,31 @@ export function StatusStrip() {
 
   useEffect(() => {
     let cancelled = false;
+    let failureCount = 0;
+    let timer: ReturnType<typeof setTimeout> | undefined;
 
     const probe = async () => {
       try {
         const result = await healthApi.check();
         if (cancelled) return;
+        failureCount = 0;
         setApiHealth("online");
         setAgentCount(typeof result.agents === "number" ? result.agents : null);
+        timer = setTimeout(probe, 15000);
       } catch {
         if (cancelled) return;
-        setApiHealth("offline");
+        failureCount += 1;
+        setApiHealth(failureCount >= 3 ? "offline" : "checking");
         setAgentCount(null);
+        timer = setTimeout(probe, failureCount >= 3 ? 5000 : 2500);
       }
     };
 
-    probe();
-    const timer = setInterval(probe, 15000);
+    void probe();
 
     return () => {
       cancelled = true;
-      clearInterval(timer);
+      if (timer) clearTimeout(timer);
     };
   }, []);
 
