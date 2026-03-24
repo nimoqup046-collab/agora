@@ -116,7 +116,7 @@ def _llm_error_hint(err: Exception) -> str:
     if "insufficient balance" in lowered or "402" in lowered:
         return "Model provider balance is insufficient. Please recharge your API account."
     if "invalid api key" in lowered or "unauthorized" in lowered or "authentication" in lowered or "401" in lowered:
-        return "Model provider API key is invalid or missing. Check OPENROUTER_API_KEY / DEEPSEEK_API_KEY / ANTHROPIC_API_KEY / OPENAI_API_KEY."
+        return "Model provider API key is invalid or missing. Check OPENROUTER_API_KEY / ZHIPU_API_KEY / DEEPSEEK_API_KEY / ANTHROPIC_API_KEY / OPENAI_API_KEY."
     if "model" in lowered and ("not found" in lowered or "does not exist" in lowered):
         return "Configured model name is invalid. Check DEFAULT_MODEL_CLAUDE / DEFAULT_MODEL_CODEX / DEFAULT_MODEL_META."
     return f"Upstream model provider error: {raw}"

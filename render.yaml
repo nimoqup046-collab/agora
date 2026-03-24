@@ -13,11 +13,15 @@ services:
         sync: false
       - key: OPENROUTER_API_KEY
         sync: false
+      - key: ZHIPU_API_KEY
+        sync: false
       - key: DEEPSEEK_API_KEY
         sync: false
       - key: ANTHROPIC_API_KEY
         sync: false
       - key: OPENAI_API_KEY
+        sync: false
+      - key: LLM_PROVIDER
         sync: false
       - key: API_CORS_ORIGINS
         sync: false
