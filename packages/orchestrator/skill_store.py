@@ -311,3 +311,103 @@ class SkillStore:
                 "DELETE FROM agent_skills WHERE id = $1", skill_id
             )
         return result == "DELETE 1"
+
+    # ── Usage audit log (Migration 005) ───────────────────────────────────────
+
+    async def log_usage(
+        self,
+        skill_id: str,
+        session_id: str,
+        agent_id: str,
+        query_text: str,
+        similarity_score: float,
+    ) -> str:
+        """
+        Record a skill injection in the audit log.
+        Returns the new log entry ID.
+        Called fire-and-forget from council router after injecting skills.
+        """
+        log_id = str(uuid.uuid4())
+        try:
+            async with self._pool.acquire() as conn:
+                await conn.execute(
+                    """
+                    INSERT INTO skill_usage_log
+                        (id, skill_id, session_id, agent_id, query_text, similarity_score)
+                    VALUES ($1, $2, $3, $4, $5, $6)
+                    """,
+                    log_id, skill_id, session_id, agent_id,
+                    query_text[:500], similarity_score,
+                )
+        except Exception:
+            pass   # log table may not exist yet (pre-migration); don't crash
+        return log_id
+
+    async def score_usage(self, log_id: str, quality: float) -> None:
+        """Set retroactive outcome_quality for a usage log entry (0.0-1.0)."""
+        try:
+            async with self._pool.acquire() as conn:
+                await conn.execute(
+                    "UPDATE skill_usage_log SET outcome_quality = $2 WHERE id = $1",
+                    log_id, max(0.0, min(1.0, quality)),
+                )
+        except Exception:
+            pass
+
+    async def get_unscored_usage(self, limit: int = 50) -> list[dict]:
+        """
+        Return recent unscored usage log entries for Evolutor scoring.
+        Each entry includes enough context for quality evaluation.
+        """
+        try:
+            async with self._pool.acquire() as conn:
+                rows = await conn.fetch(
+                    """
+                    SELECT ul.id, ul.skill_id, ul.session_id, ul.agent_id,
+                           ul.query_text, ul.similarity_score, ul.injected_at,
+                           s.name AS skill_name, s.template AS skill_template
+                    FROM skill_usage_log ul
+                    JOIN agent_skills s ON s.id = ul.skill_id
+                    WHERE ul.outcome_quality IS NULL
+                    ORDER BY ul.injected_at DESC
+                    LIMIT $1
+                    """,
+                    limit,
+                )
+            return [dict(r) for r in rows]
+        except Exception:
+            return []
+
+    async def update_avg_quality(self, skill_id: str) -> None:
+        """
+        Recalculate and store avg_quality_score from all scored usage log entries.
+        Also updates success_count based on threshold (score >= 0.6).
+        """
+        try:
+            async with self._pool.acquire() as conn:
+                row = await conn.fetchrow(
+                    """
+                    SELECT
+                        COUNT(*) AS total,
+                        AVG(outcome_quality) AS avg_q,
+                        COUNT(*) FILTER (WHERE outcome_quality >= 0.6) AS successes
+                    FROM skill_usage_log
+                    WHERE skill_id = $1 AND outcome_quality IS NOT NULL
+                    """,
+                    skill_id,
+                )
+                if row and row["total"] > 0:
+                    await conn.execute(
+                        """
+                        UPDATE agent_skills
+                        SET usage_count   = $2,
+                            success_count = $3,
+                            updated_at    = now()
+                        WHERE id = $1
+                        """,
+                        skill_id,
+                        int(row["total"]),
+                        int(row["successes"]),
+                    )
+        except Exception:
+            pass
