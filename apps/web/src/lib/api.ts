@@ -2,9 +2,11 @@
  * AGORA API client wrappers.
  */
 
-// Use same-origin proxy by default to avoid build-time env injection pitfalls
-// on Docker deployments (Render).
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "/api/proxy";
+// Always use the same-origin runtime proxy in production so browser requests
+// never bypass retry/redirect handling during Render cold starts.
+const DEV_DIRECT_API_URL =
+  process.env.NODE_ENV === "development" ? process.env.NEXT_PUBLIC_API_URL : undefined;
+const API_URL = DEV_DIRECT_API_URL || "/api/proxy";
 
 export interface Agent {
   agent_id: string;
