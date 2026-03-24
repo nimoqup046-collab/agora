@@ -13,6 +13,7 @@ import { SessionSidebar } from "@/components/SessionSidebar";
 import { CouncilChat } from "@/components/CouncilChat";
 import { ArenaPanel } from "@/components/arena/ArenaPanel";
 import { TaskBoard } from "@/components/board/TaskBoard";
+import { EvolutionPanel } from "@/components/arena/EvolutionPanel";
 import { GraphPanel } from "@/components/graph/GraphPanel";
 
 import type { PanelMode } from "@/types";
@@ -29,7 +30,9 @@ export default function SessionPage({ params }: SessionPageProps) {
 
   const rawMode = searchParams.get("mode");
   const mode: PanelMode =
-    rawMode === "arena" || rawMode === "board" ? rawMode : "council";
+    rawMode === "arena" || rawMode === "board" || rawMode === "evolution"
+      ? rawMode
+      : "council";
 
   const [sessionTitle, setSessionTitle] = useState<string | undefined>();
 
@@ -75,6 +78,7 @@ export default function SessionPage({ params }: SessionPageProps) {
         {mode === "council" && <CouncilChat sessionId={sessionId} />}
         {mode === "arena" && <ArenaPanel sessionId={sessionId} />}
         {mode === "board" && <TaskBoard sessionId={sessionId} />}
+        {mode === "evolution" && <EvolutionPanel />}
       </motion.div>
     </AnimatePresence>
   );

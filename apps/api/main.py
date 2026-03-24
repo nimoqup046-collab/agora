@@ -16,7 +16,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from .core.config import settings
 from .core.council import council
 from .core.db import get_pool, close_pool, run_migrations
-from .routers import agents, sessions, council as council_router
+from .routers import agents, sessions, council as council_router, evolution as evolution_router
 
 
 @asynccontextmanager
@@ -26,6 +26,7 @@ async def lifespan(app: FastAPI):
         pool = await get_pool()
         await run_migrations(pool)
         council.initialize(pool=pool)
+        await council.load_latest_souls()
     except Exception as e:
         # Degrade gracefully: in-memory mode if DB unavailable
         print(f"[startup] DB unavailable ({e}), running in-memory mode")
@@ -57,6 +58,7 @@ app.add_middleware(
 app.include_router(agents.router)
 app.include_router(sessions.router)
 app.include_router(council_router.router)
+app.include_router(evolution_router.router)
 
 
 @app.get("/health")

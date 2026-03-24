@@ -10,6 +10,7 @@ const MODES: { key: PanelMode; label: string }[] = [
   { key: "council", label: "COUNCIL" },
   { key: "arena", label: "ARENA" },
   { key: "board", label: "BOARD" },
+  { key: "evolution", label: "EVOLUTION" },
 ];
 
 interface CommandBarProps {
