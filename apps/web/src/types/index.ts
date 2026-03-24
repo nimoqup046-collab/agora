@@ -2,7 +2,11 @@
  * AGORA shared frontend types.
  */
 
-export type PanelMode = 'council' | 'arena' | 'board' | 'evolution'
+/** Legacy modes kept for backward-compat route handling */
+export type LegacyPanelMode = 'council' | 'arena' | 'board'
+
+/** Primary workspace modes surfaced through the Agora orbital menu */
+export type PanelMode = 'coding' | 'research' | 'reasoning' | 'evolution' | 'creation'
 
 export interface Subtask {
   id: string | number
