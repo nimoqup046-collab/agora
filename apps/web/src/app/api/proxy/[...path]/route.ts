@@ -7,6 +7,18 @@ const RETRYABLE_METHODS = new Set(["GET", "HEAD"]);
 const RETRYABLE_STATUSES = new Set([502, 503, 504]);
 const RETRY_DELAYS_MS = [0, 1500, 2500, 4000, 6000, 8000];
 const FETCH_TIMEOUT_MS = 25000;
+const HOP_BY_HOP_HEADERS = [
+  "connection",
+  "keep-alive",
+  "proxy-authenticate",
+  "proxy-authorization",
+  "te",
+  "trailer",
+  "transfer-encoding",
+  "upgrade",
+  "content-length",
+  "content-encoding",
+];
 
 function resolveApiBase() {
   const raw = process.env.AGORA_API_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
@@ -29,6 +41,12 @@ function isRenderWarmupHtml(contentType: string, body: string) {
   return /application is starting|application loading|render|deploying|service unavailable/i.test(
     body
   );
+}
+
+function sanitizeResponseHeaders(source: Headers) {
+  const next = new Headers(source);
+  for (const key of HOP_BY_HOP_HEADERS) next.delete(key);
+  return next;
 }
 
 async function forward(request: NextRequest, path: string[]) {
@@ -89,9 +107,21 @@ async function forward(request: NextRequest, path: string[]) {
         }
       }
 
-      const responseHeaders = new Headers(response.headers);
-      responseHeaders.delete("content-encoding");
-      return new Response(response.body, {
+      const responseHeaders = sanitizeResponseHeaders(response.headers);
+      const contentType = (response.headers.get("content-type") || "").toLowerCase();
+      const isSse = contentType.includes("text/event-stream");
+
+      if (isSse) {
+        return new Response(response.body, {
+          status: response.status,
+          headers: responseHeaders,
+        });
+      }
+
+      // Buffer non-streaming responses to avoid truncated/chunk-corrupted payloads
+      // when proxying across different transfer-encoding behaviors.
+      const payload = await response.arrayBuffer();
+      return new Response(payload, {
         status: response.status,
         headers: responseHeaders,
       });
