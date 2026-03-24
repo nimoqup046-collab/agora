@@ -1,118 +1,150 @@
+"use client";
+
 import Link from "next/link";
-
-const MODULES = [
-  { label: "COUNCIL", desc: "Multi-agent deliberation and consensus", href: "/council", status: "ACTIVE" },
-  { label: "ARENA", desc: "Action proposals, execution, and approval", href: "/council?mode=arena", status: "ACTIVE" },
-  { label: "BOARD", desc: "Task decomposition and execution board", href: "/council?mode=board", status: "ACTIVE" },
-  { label: "MEMORY", desc: "Cross-session memory and graph context", href: "/council", status: "ALPHA" },
-];
-
-const AGENTS = [
-  { id: "claude-architect", name: "Claude", role: "ARCHITECT", color: "text-amber-500 border-amber-700/50" },
-  { id: "codex-implementer", name: "Codex", role: "IMPLEMENTER", color: "text-emerald-400 border-emerald-700/50" },
-  { id: "meta-conductor", name: "Meta", role: "CONDUCTOR", color: "text-violet-400 border-violet-700/50" },
-];
+import { motion } from "framer-motion";
+import { LanguageToggle } from "@/components/i18n/LanguageToggle";
+import { useI18n } from "@/components/i18n/LanguageProvider";
+import { WisdomHall } from "@/components/home/WisdomHall";
 
 export default function HomePage() {
+  const { locale, t } = useI18n();
+
+  const modules = [
+    {
+      key: "COUNCIL",
+      descEn: "Multi-agent deliberation and consensus stream.",
+      descZh: "多智能体推理协商与结论共识中心。",
+      href: "/council",
+      active: true,
+    },
+    {
+      key: "ARENA",
+      descEn: "Action proposals, execution path, and approvals.",
+      descZh: "动作提案、执行路径与确认审批。",
+      href: "/council?mode=arena",
+      active: true,
+    },
+    {
+      key: "BOARD",
+      descEn: "Task decomposition and collaborative battle board.",
+      descZh: "任务拆解与协同推进作战看板。",
+      href: "/council?mode=board",
+      active: true,
+    },
+    {
+      key: "MEMORY",
+      descEn: "Cross-session memory and knowledge graph context.",
+      descZh: "跨会话记忆与知识图谱上下文。",
+      href: "/council",
+      active: false,
+    },
+  ];
+
   return (
-    <main className="flex flex-col h-screen bg-agora-bg overflow-hidden">
-      <div className="h-10 border-b border-agora-border bg-agora-surface flex items-center px-4 sm:px-6 shrink-0">
-        <span className="text-sm font-bold text-slate-200 tracking-wider">AGORA</span>
-        <span className="ml-3 text-[10px] text-slate-600 font-mono tracking-widest">INTELLIGENCE COMMAND CENTER</span>
+    <main className="min-h-screen px-4 py-4 sm:px-6 sm:py-6">
+      <div className="agora-panel rounded-xl px-4 sm:px-5 py-3 flex items-center gap-3">
+        <div>
+          <p className="font-tech text-cyan-200 text-sm tracking-[0.3em]">AGORA</p>
+          <p className="text-[10px] text-slate-400 tracking-[0.18em] uppercase">
+            {t("command.center")}
+          </p>
+        </div>
+
         <div className="ml-auto flex items-center gap-2">
-          <span className="text-[10px] text-emerald-400 border border-emerald-800/50 px-2 py-0.5 rounded font-mono">
-            ONLINE
+          <span className="text-[10px] border border-emerald-500/40 text-emerald-300 px-2 py-1 rounded">
+            {t("home.online")}
           </span>
+          <LanguageToggle />
         </div>
       </div>
 
-      <div className="flex flex-1 overflow-hidden flex-col lg:flex-row">
-        <div className="lg:w-80 border-b lg:border-b-0 lg:border-r border-agora-border flex flex-col p-5 sm:p-6 space-y-5 lg:space-y-6 overflow-y-auto">
-          <div>
-            <h1 className="text-2xl font-bold text-slate-100 tracking-tight">AGORA</h1>
-            <p className="text-xs text-agora-accent font-mono tracking-widest mt-1">COLLECTIVE INTELLIGENCE TERMINAL</p>
-          </div>
+      <div className="mt-4 grid grid-cols-1 xl:grid-cols-[1.2fr_0.8fr] gap-4">
+        <motion.section
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, ease: "easeOut" }}
+          className="agora-panel rounded-xl p-5 sm:p-6"
+        >
+          <p className="font-tech text-xs uppercase tracking-[0.25em] text-cyan-300/85">
+            {t("home.modules")}
+          </p>
+          <h1 className="font-tech text-4xl sm:text-5xl mt-3 text-slate-100 leading-none">
+            {t("home.title")}
+          </h1>
+          <p className="font-wisdom text-base sm:text-lg mt-2 text-amber-200/90">
+            {t("home.subtitle")}
+          </p>
 
-          <blockquote className="border-l-2 border-agora-border pl-3 text-slate-500 text-xs italic leading-relaxed">
-            "In the original Agora, Socrates did not seek answers alone."
-            <br />
-            "He convened willing minds and let wisdom emerge through debate, challenge, and collision."
+          <blockquote className="mt-5 p-4 rounded-lg module-divider font-wisdom text-sm sm:text-base leading-relaxed text-slate-200/90">
+            <p>{t("home.quoteA")}</p>
+            <p className="mt-2">{t("home.quoteB")}</p>
           </blockquote>
 
-          <div className="space-y-2">
-            <p className="text-[10px] text-slate-600 tracking-widest uppercase">Agent Council</p>
-            {AGENTS.map((a) => (
-              <div
-                key={a.id}
-                className={`flex items-center gap-2 px-2.5 py-2 rounded border ${a.color} bg-agora-surface/40`}
-              >
-                <span className={`text-xs font-mono ${a.color.split(" ")[0]}`}>{a.name}</span>
-                <span className="text-[9px] text-slate-600 tracking-widest ml-auto">{a.role}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="flex-1 p-5 sm:p-6 space-y-4 overflow-y-auto">
-          <p className="text-[10px] text-slate-600 tracking-widest uppercase">Core Modules</p>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {MODULES.map((m) => (
+          <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {modules.map((module) => (
               <Link
-                key={m.label}
-                href={m.href}
-                className="group block p-4 rounded border border-agora-border bg-agora-surface/40 hover:border-agora-accent/40 hover:bg-agora-surface transition-colors"
+                key={module.key}
+                href={module.href}
+                className="module-divider rounded-lg p-4 hover:scale-[1.01] transition-transform duration-200"
               >
-                <div className="flex items-center justify-between mb-2 gap-3">
-                  <span className="text-xs font-semibold text-slate-300 tracking-widest group-hover:text-agora-accent transition-colors">
-                    {m.label}
-                  </span>
+                <div className="flex items-center justify-between gap-2">
+                  <span className="font-tech text-xs tracking-[0.2em] text-cyan-200">{module.key}</span>
                   <span
-                    className={`text-[9px] font-mono px-1.5 py-0.5 rounded border ${
-                      m.status === "ACTIVE"
-                        ? "text-emerald-400 border-emerald-800/40"
-                        : "text-amber-400 border-amber-800/40"
+                    className={`text-[10px] px-2 py-0.5 rounded border ${
+                      module.active
+                        ? "border-emerald-500/50 text-emerald-300"
+                        : "border-amber-500/50 text-amber-300"
                     }`}
                   >
-                    {m.status}
+                    {module.active ? t("home.moduleStatusActive") : t("home.moduleStatusAlpha")}
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-600">{m.desc}</p>
+                <p className="mt-2 text-sm text-slate-300/90 leading-relaxed">
+                  {locale === "zh-CN" ? module.descZh : module.descEn}
+                </p>
               </Link>
             ))}
           </div>
 
-          <div className="pt-4">
+          <div className="mt-5">
             <Link
               href="/council"
-              className="inline-flex items-center gap-2 px-4 py-2 rounded border border-agora-accent/40 bg-agora-accent/10 text-agora-accent text-xs font-semibold hover:bg-agora-accent/20 transition-colors tracking-wider"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg border border-cyan-400/45 bg-cyan-500/10 text-cyan-100 font-tech text-sm tracking-[0.12em] hover:bg-cyan-500/16 transition-colors"
             >
-              ENTER WORKSPACE
+              {t("home.enter")}
             </Link>
           </div>
-        </div>
+        </motion.section>
 
-        <div className="lg:w-56 border-t lg:border-t-0 lg:border-l border-agora-border flex flex-col p-4 space-y-4">
-          <p className="text-[10px] text-slate-600 tracking-widest uppercase">System State</p>
-          <div className="space-y-2">
-            {[
-              ["API", "READY"],
-              ["MEMORY", "REDIS + PG"],
-              ["GITHUB", "CONNECTED"],
-              ["VERSION", "2.0.0"],
-            ].map(([key, val]) => (
-              <div key={key} className="flex justify-between items-center">
-                <span className="text-[10px] text-slate-600 font-mono">{key}</span>
-                <span className="text-[10px] text-slate-400 font-mono">{val}</span>
-              </div>
-            ))}
-          </div>
+        <motion.section
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45, ease: "easeOut", delay: 0.06 }}
+          className="space-y-4"
+        >
+          <WisdomHall />
 
-          <div className="mt-auto pt-4 border-t border-agora-border">
-            <p className="text-[9px] text-slate-700 font-mono">Phase 2 / Command Center</p>
+          <div className="agora-panel rounded-xl p-5">
+            <p className="font-tech text-[11px] uppercase tracking-[0.2em] text-slate-300/80">
+              {t("home.systemState")}
+            </p>
+            <div className="mt-3 space-y-2">
+              {[
+                ["API", "LIVE"],
+                ["MEMORY", "REDIS + PG"],
+                ["GITHUB", "CONNECTED"],
+                ["VERSION", "2.1.0"],
+              ].map(([k, v]) => (
+                <div key={k} className="module-divider rounded-md px-3 py-2 flex items-center justify-between">
+                  <span className="font-tech text-xs text-slate-300">{k}</span>
+                  <span className="text-xs text-cyan-200">{v}</span>
+                </div>
+              ))}
+            </div>
           </div>
-        </div>
+        </motion.section>
       </div>
     </main>
   );
 }
+

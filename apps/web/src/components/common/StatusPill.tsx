@@ -11,17 +11,17 @@ interface StatusPillProps {
 }
 
 const variantClass: Record<Variant, string> = {
-  live: "text-emerald-400 border-emerald-800/60 bg-emerald-950/40",
-  idle: "text-slate-500 border-slate-700/60 bg-slate-900/40",
-  error: "text-rose-400 border-rose-800/60 bg-rose-950/40",
-  info: "text-sky-400 border-sky-800/60 bg-sky-950/40",
+  live: "text-emerald-200 border-emerald-500/55 bg-emerald-500/10",
+  idle: "text-slate-300 border-slate-500/50 bg-slate-600/10",
+  error: "text-rose-200 border-rose-500/60 bg-rose-500/10",
+  info: "text-sky-200 border-sky-500/60 bg-sky-500/10",
 };
 
 export function StatusPill({ label, variant = "idle", pulse = false }: StatusPillProps) {
   return (
     <span
       className={clsx(
-        "inline-flex items-center gap-1 text-[10px] font-mono px-2 py-0.5 rounded border",
+        "inline-flex items-center gap-1 text-[10px] font-tech px-2 py-0.5 rounded border tracking-[0.14em]",
         variantClass[variant]
       )}
     >
