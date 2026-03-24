@@ -41,5 +41,7 @@ services:
     dockerContext: ./apps/web
     plan: free
     envVars:
+      - key: AGORA_API_URL
+        sync: false
       - key: NEXT_PUBLIC_API_URL
         sync: false
