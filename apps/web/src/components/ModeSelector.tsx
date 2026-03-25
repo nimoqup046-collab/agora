@@ -3,8 +3,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Code2, Beaker, Zap, BrainCircuit, Palette, X
 } from 'lucide-react';
-import { useModeStore, Mode } from '@/src/store/modeStore';
-import { cn } from '@/src/lib/utils';
+import { useModeStore, Mode } from '@/store/modeStore';
+import { cn } from '@/lib/utils';
 import { useRef } from 'react';
 
 interface ModeSelectorProps {
