@@ -15,11 +15,71 @@ interface ModeSelectorOverlayProps {
 }
 
 const MODE_CARDS = [
-  { mode: "coding" as PanelMode, icon: Code2, color: "blue", label: "编程模式", labelEn: "PROGRAMMING", desc: "蜂群编码竞技场", descEn: "Swarm coding arena" },
-  { mode: "research" as PanelMode, icon: FlaskConical, color: "purple", label: "科研模式", labelEn: "RESEARCH", desc: "科学议事厅与知识球体", descEn: "Scientific council" },
-  { mode: "reasoning" as PanelMode, icon: BrainCircuit, color: "cyan", label: "推理模式", labelEn: "REASONING", desc: "逻辑链与并行辩论", descEn: "Logic chain & debate" },
-  { mode: "evolution" as PanelMode, icon: Zap, color: "amber", label: "AGI自进化", labelEn: "EVOLUTION", desc: "SOUL蒸馏与蜂群升级", descEn: "SOUL distill & upgrade" },
-  { mode: "creation" as PanelMode, icon: Palette, color: "orange", label: "创作模式", labelEn: "CREATION", desc: "实时渲染与迭代历史", descEn: "Live render & iteration" },
+  {
+    mode: "coding" as PanelMode,
+    icon: Code2,
+    color: "blue",
+    glowShadow: "shadow-[0_0_50px_rgba(59,130,246,0.4)]",
+    glowBg: "bg-blue-500/20",
+    glowText: "text-blue-400",
+    glowIcon: "shadow-blue-500/30",
+    label: "编程模式",
+    labelEn: "PROGRAMMING",
+    desc: "蜂群编码竞技场",
+    descEn: "Swarm coding arena",
+  },
+  {
+    mode: "research" as PanelMode,
+    icon: FlaskConical,
+    color: "purple",
+    glowShadow: "shadow-[0_0_50px_rgba(168,85,247,0.4)]",
+    glowBg: "bg-purple-500/20",
+    glowText: "text-purple-400",
+    glowIcon: "shadow-purple-500/30",
+    label: "科研模式",
+    labelEn: "RESEARCH",
+    desc: "科学议事厅与知识球体",
+    descEn: "Scientific council",
+  },
+  {
+    mode: "reasoning" as PanelMode,
+    icon: BrainCircuit,
+    color: "cyan",
+    glowShadow: "shadow-[0_0_50px_rgba(34,211,238,0.4)]",
+    glowBg: "bg-cyan-500/20",
+    glowText: "text-cyan-400",
+    glowIcon: "shadow-cyan-500/30",
+    label: "推理模式",
+    labelEn: "REASONING",
+    desc: "逻辑链与并行辩论",
+    descEn: "Logic chain & debate",
+  },
+  {
+    mode: "evolution" as PanelMode,
+    icon: Zap,
+    color: "amber",
+    glowShadow: "shadow-[0_0_50px_rgba(245,158,11,0.4)]",
+    glowBg: "bg-amber-500/20",
+    glowText: "text-amber-400",
+    glowIcon: "shadow-amber-500/30",
+    label: "AGI自进化",
+    labelEn: "EVOLUTION",
+    desc: "SOUL蒸馏与蜂群升级",
+    descEn: "SOUL distill & upgrade",
+  },
+  {
+    mode: "creation" as PanelMode,
+    icon: Palette,
+    color: "emerald",
+    glowShadow: "shadow-[0_0_50px_rgba(16,185,129,0.4)]",
+    glowBg: "bg-emerald-500/20",
+    glowText: "text-emerald-400",
+    glowIcon: "shadow-emerald-500/30",
+    label: "创作模式",
+    labelEn: "CREATION",
+    desc: "实时渲染与迭代历史",
+    descEn: "Live render & iteration",
+  },
 ];
 
 export function ModeSelectorOverlay({
@@ -81,15 +141,18 @@ export function ModeSelectorOverlay({
             whileHover={{ scale: 1.1, rotate: 90 }}
             whileTap={{ scale: 0.9 }}
             onClick={onClose}
-            className="absolute top-8 right-8 p-3 bg-white/5 hover:bg-white/10 rounded-full border border-white/10 text-white transition-colors z-10"
+            className="absolute top-8 right-8 p-3 bg-white/5 hover:bg-white/10 rounded-full border border-white/10 hover:border-white/20 text-white/60 hover:text-white transition-all duration-200 z-10"
           >
-            <X className="w-6 h-6" />
+            <X className="w-5 h-5" />
           </motion.button>
 
           {/* Title */}
           <div className="absolute top-8 left-8 z-10">
-            <p className="font-mono text-xs tracking-[2px] text-zinc-500 uppercase">
+            <p className="font-mono text-xs tracking-[4px] text-white/40 uppercase">
               {locale === "zh-CN" ? "选择智慧维度" : "SELECT MODE"}
+            </p>
+            <p className="font-mono text-[10px] tracking-widest text-white/25 mt-0.5">
+              {locale === "zh-CN" ? "选择要进入的智慧维度" : "Select the intelligence dimension"}
             </p>
           </div>
 
