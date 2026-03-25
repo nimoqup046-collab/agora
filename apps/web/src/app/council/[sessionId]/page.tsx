@@ -1,25 +1,22 @@
 "use client";
 
 import { use, useEffect, useState } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
-import { useAgoraStore } from "@/lib/store";
 import { sessionsApi } from "@/lib/api";
-
-import { CommandBar } from "@/components/layout/CommandBar";
-import { ResponsiveWorkbench } from "@/components/layout/ResponsiveWorkbench";
-import { StatusStrip } from "@/components/layout/StatusStrip";
+import { useAgoraStore } from "@/lib/store";
 import { SessionSidebar } from "@/components/SessionSidebar";
 import { GraphPanel } from "@/components/graph/GraphPanel";
-import { MemoryOrb } from "@/components/MemoryOrb";
 import { useI18n } from "@/components/i18n/LanguageProvider";
+import { CommandBar } from "@/components/layout/CommandBar";
 import { MemoryOrb } from "@/components/layout/MemoryOrb";
-import { ProgrammingMode } from "@/components/modes/ProgrammingMode";
-import { ResearchMode } from "@/components/modes/ResearchMode";
-import { ReasoningMode } from "@/components/modes/ReasoningMode";
-import { EvolutionMode } from "@/components/modes/EvolutionMode";
+import { ResponsiveWorkbench } from "@/components/layout/ResponsiveWorkbench";
+import { StatusStrip } from "@/components/layout/StatusStrip";
 import { CreativeMode } from "@/components/modes/CreativeMode";
-
+import { EvolutionMode } from "@/components/modes/EvolutionMode";
+import { ProgrammingMode } from "@/components/modes/ProgrammingMode";
+import { ReasoningMode } from "@/components/modes/ReasoningMode";
+import { ResearchMode } from "@/components/modes/ResearchMode";
 import type { PanelMode } from "@/types";
 
 interface SessionPageProps {
@@ -41,12 +38,6 @@ export default function SessionPage({ params }: SessionPageProps) {
   const { t } = useI18n();
   const searchParams = useSearchParams();
   const router = useRouter();
-
-  const rawMode = searchParams.get("mode");
-  const mode: PanelMode = VALID_MODES.includes(rawMode as PanelMode)
-    ? (rawMode as PanelMode)
-    : "research";
-
   const mode = normalizeMode(searchParams.get("mode"));
   const [sessionTitle, setSessionTitle] = useState<string | undefined>();
 
@@ -55,7 +46,7 @@ export default function SessionPage({ params }: SessionPageProps) {
   }, [sessionId, setCurrentSessionId]);
 
   useEffect(() => {
-    const cached = sessions.find((s) => s.id === sessionId);
+    const cached = sessions.find((session) => session.id === sessionId);
     if (cached) {
       setSessionTitle(cached.title);
       return;
@@ -63,16 +54,16 @@ export default function SessionPage({ params }: SessionPageProps) {
 
     sessionsApi
       .get(sessionId)
-      .then((s) => setSessionTitle(s.title))
+      .then((session) => setSessionTitle(session.title))
       .catch(console.error);
   }, [sessionId, sessions]);
 
-  const handleModeChange = (newMode: PanelMode) => {
+  const handleModeChange = (nextMode: PanelMode) => {
     const params = new URLSearchParams(searchParams.toString());
-    if (newMode === "research") {
+    if (nextMode === "research") {
       params.delete("mode");
     } else {
-      params.set("mode", newMode);
+      params.set("mode", nextMode);
     }
 
     const query = params.toString();
@@ -90,6 +81,12 @@ export default function SessionPage({ params }: SessionPageProps) {
         transition={{ duration: 0.25, ease: "easeOut" }}
       >
         <span className="mode-warp" />
+        <motion.span
+          className="mode-jump-flash"
+          initial={{ opacity: 0.65, scale: 1 }}
+          animate={{ opacity: 0, scale: 1.15 }}
+          transition={{ duration: 0.28, ease: "easeOut" }}
+        />
         {mode === "coding" && <ProgrammingMode sessionId={sessionId} />}
         {mode === "research" && <ResearchMode sessionId={sessionId} />}
         {mode === "reasoning" && <ReasoningMode sessionId={sessionId} />}
