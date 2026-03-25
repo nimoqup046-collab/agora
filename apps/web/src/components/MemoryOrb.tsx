@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState } from 'react';
-import { useModeStore } from '@/src/store/modeStore';
+import { useModeStore } from '@/store/modeStore';
 import { Brain, Search, Zap, X } from 'lucide-react';
 
 export default function MemoryOrb() {
