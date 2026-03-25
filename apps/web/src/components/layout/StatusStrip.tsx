@@ -50,6 +50,13 @@ export function StatusStrip() {
         ? "#f43f5e"
         : "#e3c27a";
 
+  const healthGlow =
+    apiHealth === "online"
+      ? "rgba(16,185,129,0.8)"
+      : apiHealth === "offline"
+        ? "rgba(244,63,94,0.8)"
+        : "rgba(227,194,122,0.8)";
+
   const healthLabel =
     apiHealth === "online"
       ? t("status.online")
@@ -58,25 +65,31 @@ export function StatusStrip() {
         : t("status.checking");
 
   return (
-    <div
-      className="h-8 shrink-0 flex items-center px-3 sm:px-4 gap-4 sm:gap-5 z-10"
-      style={{
-        background: "rgba(3, 5, 8, 0.8)",
-        borderTop: "1px solid rgba(255,255,255,0.03)",
-      }}
-    >
-      <span className="text-[9px] text-slate-500 font-tech tracking-wider">
-        {t("status.msgs")}: <span className="text-slate-400">{messages.length}</span>
-      </span>
-      <span className="text-[9px] text-slate-500 font-tech tracking-wider">
-        {t("status.mem")}: <span className="text-slate-400">{memoryCount}</span>
-      </span>
-      <span className="text-[9px] text-slate-500 font-tech tracking-wider">
-        {t("status.prs")}: <span className="text-slate-400">{prCount}</span>
+    <div className="h-8 shrink-0 flex items-center px-3 sm:px-4 gap-4 sm:gap-5 z-10 bg-black/40 backdrop-blur-xl border-t border-white/5">
+      <span className="font-mono text-[9px] tracking-wider text-white/30">
+        {t("status.msgs")}:{" "}
+        <span className="text-white/50">{messages.length}</span>
       </span>
 
-      <span className="text-[9px] font-tech tracking-wider flex items-center gap-1.5">
-        <span className="w-1 h-1 rounded-full" style={{ background: healthColor }} />
+      <span className="font-mono text-[9px] tracking-wider text-white/30">
+        {t("status.mem")}:{" "}
+        <span className="text-white/50">{memoryCount}</span>
+      </span>
+
+      <span className="font-mono text-[9px] tracking-wider text-white/30">
+        {t("status.prs")}:{" "}
+        <span className="text-white/50">{prCount}</span>
+      </span>
+
+      <span className="font-mono text-[9px] tracking-wider flex items-center gap-1.5">
+        {/* Health dot with glow */}
+        <span
+          className="w-1.5 h-1.5 rounded-full"
+          style={{
+            background: healthColor,
+            boxShadow: `0 0 6px ${healthGlow}`,
+          }}
+        />
         <span style={{ color: healthColor }}>
           {t("status.api")}: {healthLabel}
           {agentCount !== null ? ` (${agentCount})` : ""}
@@ -85,9 +98,15 @@ export function StatusStrip() {
 
       <div className="ml-auto flex items-center gap-1.5">
         {isStreaming && (
-          <span className="w-1 h-1 rounded-full bg-cyan-400 animate-pulse" />
+          <span
+            className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"
+            style={{ boxShadow: "0 0 6px rgba(34,211,238,0.8)" }}
+          />
         )}
-        <span className="text-[9px] font-tech tracking-wider" style={{ color: isStreaming ? "#39d8ff" : "#4a5568" }}>
+        <span
+          className="font-mono text-[9px] tracking-wider"
+          style={{ color: isStreaming ? "#22d3ee" : "rgba(255,255,255,0.2)" }}
+        >
           {isStreaming ? t("status.deliberating") : t("status.ready")}
         </span>
       </div>

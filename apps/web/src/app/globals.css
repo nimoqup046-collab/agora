@@ -2,8 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;700&display=swap");
+
 :root {
-  --bg: #030508;
+  --bg: #050505;
   --surface: #0a0e1a;
   --surface-2: #0f1428;
   --border: #1a2344;
@@ -27,10 +29,45 @@ body {
 }
 
 body {
-  color: var(--text-main);
-  font-family: "Rajdhani", "Noto Sans SC", "Segoe UI", sans-serif;
-  background: #030508;
+  color: white;
+  font-family: "Inter", ui-sans-serif, system-ui, sans-serif;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  background: #050505;
   overflow-x: hidden;
+}
+
+/* ── Custom Scrollbar ──────────────────────────────────────────── */
+
+::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  width: 4px;
+  height: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
 }
 
 /* ── Animated background gradient ─────────────────────────────── */
@@ -181,7 +218,7 @@ main,
     0 0 60px rgba(57, 216, 255, 0.06);
 }
 
-/* ── Glass Card (new) ─────────────────────────────────────────── */
+/* ── Glass Card ─────────────────────────────────────────────── */
 
 .glass-card {
   background: rgba(255, 255, 255, 0.03);
@@ -414,7 +451,7 @@ main,
 .pixel-avatar:nth-child(3) { animation-delay: 0.45s; }
 .pixel-avatar:nth-child(4) { animation-delay: 0.68s; }
 
-/* ── Animations ─────────────────────────────────────────────── */
+/* ── Mode Warp / Jump Animations ─────────────────────────────── */
 
 .mode-warp {
   position: absolute;
@@ -458,6 +495,22 @@ main,
 .mode-selector-jump {
   animation: selector-jump 0.18s ease-out forwards;
 }
+
+/* ── Swarm Terminal Animations ────────────────────────────────── */
+
+.animate-pulse-glow {
+  animation: pulse-glow 4s infinite;
+}
+
+.animate-spin-slow {
+  animation: spin-slow 20s linear infinite;
+}
+
+.animate-reverse-spin-slow {
+  animation: reverse-spin-slow 25s linear infinite;
+}
+
+/* ── Animations ─────────────────────────────────────────────── */
 
 @keyframes avatar-sway {
   0% { transform: translateY(0px) rotate(-1.5deg); }
@@ -576,6 +629,23 @@ main,
   animation: dash-flow 1.5s linear infinite;
 }
 
+/* ── Pulse glow / spin keyframes (swarm-terminal) ─────────────── */
+
+@keyframes pulse-glow {
+  0%, 100% { opacity: 0.5; filter: blur(10px); }
+  50% { opacity: 1; filter: blur(20px); }
+}
+
+@keyframes spin-slow {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes reverse-spin-slow {
+  from { transform: rotate(360deg); }
+  to { transform: rotate(0deg); }
+}
+
 /* ── Gradient border utility ──────────────────────────────────── */
 
 .gradient-border {
@@ -593,24 +663,4 @@ main,
   -webkit-mask-composite: xor;
   mask-composite: exclude;
   pointer-events: none;
-}
-
-/* ── Scrollbar ──────────────────────────────────────────────── */
-
-::-webkit-scrollbar {
-  width: 5px;
-  height: 5px;
-}
-
-::-webkit-scrollbar-track {
-  background: rgba(5, 8, 16, 0.8);
-}
-
-::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, rgba(57, 216, 255, 0.3), rgba(143, 125, 255, 0.25));
-  border-radius: 8px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, rgba(57, 216, 255, 0.5), rgba(143, 125, 255, 0.4));
 }

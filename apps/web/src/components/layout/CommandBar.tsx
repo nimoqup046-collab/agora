@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
-import { clsx } from "clsx";
+import { LayoutGrid, Activity, ShieldCheck, Cpu } from "lucide-react";
 import { useAgoraStore } from "@/lib/store";
 import { StatusPill } from "@/components/common/StatusPill";
 import { LanguageToggle } from "@/components/i18n/LanguageToggle";
@@ -17,6 +17,14 @@ interface CommandBarProps {
   onModeChange: (mode: PanelMode) => void;
 }
 
+const AGENT_DOT_COLORS = [
+  "bg-blue-500 shadow-[0_0_6px_rgba(59,130,246,0.8)]",
+  "bg-purple-500 shadow-[0_0_6px_rgba(168,85,247,0.8)]",
+  "bg-cyan-500 shadow-[0_0_6px_rgba(34,211,238,0.8)]",
+  "bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.8)]",
+  "bg-amber-500 shadow-[0_0_6px_rgba(245,158,11,0.8)]",
+];
+
 export function CommandBar({ sessionTitle, mode, onModeChange }: CommandBarProps) {
   const { isStreaming } = useAgoraStore();
   const { locale, t } = useI18n();
@@ -27,62 +35,86 @@ export function CommandBar({ sessionTitle, mode, onModeChange }: CommandBarProps
 
   return (
     <>
-      <div className="command-bar-glass h-12 shrink-0 px-3 sm:px-4 flex items-center gap-2 border-b border-white/[0.06] z-20">
+      <div className="h-12 shrink-0 px-3 sm:px-4 flex items-center gap-2 bg-black/40 backdrop-blur-2xl border-b border-white/5 z-20">
+        {/* AGORA button: mode-colored bg + glow */}
         <button
           type="button"
           onClick={() => setSelectorOpen(true)}
-          className="font-tech text-sm text-cyan-200 hover:text-cyan-100 transition-colors tracking-[0.18em] px-2 py-1 rounded border border-cyan-400/25 hover:border-cyan-300/55"
+          className="w-7 h-7 rounded-lg flex items-center justify-center transition-all duration-200 hover:scale-105"
+          style={{
+            background: `linear-gradient(135deg, ${currentItem?.color ?? "#3b82f6"}40, ${currentItem?.color ?? "#3b82f6"}20)`,
+            border: `1px solid ${currentItem?.color ?? "#3b82f6"}50`,
+            boxShadow: `0 0 18px ${currentItem?.color ?? "#3b82f6"}55`,
+          }}
           title={locale === "zh-CN" ? "打开模式选择器" : "Open mode selector"}
         >
-          AGORA
+          <LayoutGrid className="w-3.5 h-3.5" style={{ color: currentItem?.color ?? "#3b82f6" }} />
         </button>
+
+        {/* AGORA label */}
+        <span className="font-mono text-xs tracking-widest text-white/60 hidden sm:block">AGORA</span>
 
         {sessionTitle && (
           <>
-            <span className="text-slate-500/60">/</span>
-            <span className="text-xs text-slate-300/80 truncate max-w-28 sm:max-w-48 font-wisdom">
+            <span className="text-white/20">/</span>
+            <span className="font-mono text-[11px] text-white/50 truncate max-w-28 sm:max-w-48">
               {sessionTitle || t("command.sessionFallback")}
             </span>
           </>
         )}
 
-        <StatusPill
-          label={isStreaming ? "LIVE" : "IDLE"}
-          variant={isStreaming ? "live" : "idle"}
-          pulse={isStreaming}
-        />
-
-        <div className="ml-auto flex items-center gap-2">
-          <div
-            className="hidden sm:flex items-center px-2.5 py-1 rounded border"
-            style={{
-              borderColor: `${currentItem?.color ?? "#67e8f9"}55`,
-              color: currentItem?.color ?? "#cffafe",
-              backgroundColor: `${currentItem?.color ?? "#67e8f9"}16`,
-            }}
-          >
-            <span className="font-tech text-[10px] tracking-[0.16em]">{modeLabel}</span>
+        {/* Center: mode badge pill */}
+        <div className="flex-1 flex justify-center">
+          <div className="flex items-center gap-2 px-3 py-1 bg-white/5 backdrop-blur-md rounded-full border border-white/10">
+            <span
+              className="w-1.5 h-1.5 rounded-full"
+              style={{
+                background: currentItem?.color ?? "#3b82f6",
+                boxShadow: `0 0 6px ${currentItem?.color ?? "#3b82f6"}`,
+              }}
+            />
+            <span
+              className="font-mono text-[10px] tracking-widest"
+              style={{ color: currentItem?.color ?? "#3b82f6" }}
+            >
+              {modeLabel.toUpperCase()}
+            </span>
           </div>
+        </div>
 
-          <div className="hidden md:flex items-center gap-1.5 px-2 py-1 rounded border border-violet-300/35 bg-violet-500/10">
-            {[0, 1, 2, 3, 4].map((idx) => (
-              <span
-                key={idx}
-                className={clsx(
-                  "w-2 h-2 rounded-full",
-                  idx % 3 === 0 && "bg-cyan-300",
-                  idx % 3 === 1 && "bg-violet-300",
-                  idx % 3 === 2 && "bg-amber-300"
-                )}
-              />
+        {/* Right side */}
+        <div className="flex items-center gap-2">
+          {/* Agent dots */}
+          <div className="hidden md:flex items-center gap-1.5 px-2.5 py-1.5 bg-white/5 backdrop-blur-md rounded-full border border-white/10">
+            {AGENT_DOT_COLORS.map((cls, idx) => (
+              <span key={idx} className={`w-2 h-2 rounded-full ${cls}`} />
             ))}
-            <span className="font-tech text-[10px] tracking-[0.14em] text-slate-200">SWARM</span>
           </div>
+
+          {/* Status icons */}
+          <div className="hidden sm:flex items-center gap-1.5">
+            <Activity
+              className="w-3.5 h-3.5"
+              style={{
+                color: isStreaming ? "#22d3ee" : "rgba(255,255,255,0.2)",
+                filter: isStreaming ? "drop-shadow(0 0 4px rgba(34,211,238,0.8))" : "none",
+              }}
+            />
+            <ShieldCheck className="w-3.5 h-3.5 text-white/20" />
+            <Cpu className="w-3.5 h-3.5 text-white/20" />
+          </div>
+
+          <StatusPill
+            label={isStreaming ? "LIVE" : "IDLE"}
+            variant={isStreaming ? "live" : "idle"}
+            pulse={isStreaming}
+          />
 
           <LanguageToggle />
+
           <Link
             href="/"
-            className="text-[10px] px-2 py-1 rounded border border-slate-500/45 text-slate-300 hover:text-slate-100 hover:border-slate-300/65 transition-colors"
+            className="font-mono text-[10px] tracking-widest px-2 py-1 rounded-lg border border-white/10 bg-white/5 text-white/40 hover:text-white/70 hover:border-white/20 hover:bg-white/10 transition-all duration-200"
           >
             {locale === "zh-CN" ? "首页" : "HOME"}
           </Link>

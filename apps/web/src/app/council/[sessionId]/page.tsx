@@ -18,6 +18,7 @@ import { ProgrammingMode } from "@/components/modes/ProgrammingMode";
 import { ReasoningMode } from "@/components/modes/ReasoningMode";
 import { ResearchMode } from "@/components/modes/ResearchMode";
 import type { PanelMode } from "@/types";
+import { ParticlesBackground } from "@/components/layout/ParticlesBackground";
 
 interface SessionPageProps {
   params: Promise<{ sessionId: string }>;
@@ -98,6 +99,7 @@ export default function SessionPage({ params }: SessionPageProps) {
 
   return (
     <>
+      <ParticlesBackground />
       <CommandBar sessionTitle={sessionTitle} mode={mode} onModeChange={handleModeChange} />
       <ResponsiveWorkbench
         left={<SessionSidebar />}
