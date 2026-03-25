@@ -17,11 +17,11 @@ export default function RootLayout({
     <html lang="zh-CN">
       <head>
         <link
-          href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700&family=Rajdhani:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Orbitron:wght@400;500;600;700&family=Rajdhani:wght@300;400;500;600;700&family=JetBrains+Mono:wght@300;400;500;700&display=swap"
           rel="stylesheet"
         />
       </head>
-      <body className="min-h-screen bg-agora-bg text-slate-200 antialiased">
+      <body className="min-h-screen bg-[#050505] text-white antialiased font-sans">
         <LanguageProvider>{children}</LanguageProvider>
       </body>
     </html>
