@@ -90,6 +90,12 @@ export default function SessionPage({ params }: SessionPageProps) {
         transition={{ duration: 0.25, ease: "easeOut" }}
       >
         <span className="mode-warp" />
+        <motion.span
+          className="mode-jump-flash"
+          initial={{ opacity: 0.65, scale: 1 }}
+          animate={{ opacity: 0, scale: 1.15 }}
+          transition={{ duration: 0.28, ease: "easeOut" }}
+        />
         {mode === "coding" && <ProgrammingMode sessionId={sessionId} />}
         {mode === "research" && <ResearchMode sessionId={sessionId} />}
         {mode === "reasoning" && <ReasoningMode sessionId={sessionId} />}
