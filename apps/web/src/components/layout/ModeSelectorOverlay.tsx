@@ -160,6 +160,7 @@ export function ModeSelectorOverlay({
           <div className="max-w-6xl w-full grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6 relative z-10">
             {MODE_CARDS.map((card, index) => {
               const isActive = currentMode === card.mode;
+              const isSelecting = selecting === card.mode;
               const Icon = card.icon;
               return (
                 <motion.div
@@ -170,39 +171,34 @@ export function ModeSelectorOverlay({
                   whileHover={{ y: -10, scale: 1.02 }}
                   onClick={() => handleSelect(card.mode)}
                   className={clsx(
-                    "group relative aspect-[4/5] bg-white/5 backdrop-blur-2xl border border-white/10 rounded-[40px] p-8 flex flex-col items-center justify-center cursor-pointer transition-all hover:border-white/30",
-                    isActive && "border-white/40 bg-white/10 shadow-[0_0_40px_rgba(255,255,255,0.1)]"
+                    "group relative aspect-[4/5] bg-white/5 backdrop-blur-2xl border border-white/10 rounded-[40px] p-8 flex flex-col items-center justify-center cursor-pointer transition-all duration-200 hover:border-white/30 hover:bg-white/8",
+                    isActive && clsx("border-white/40 bg-white/10", card.glowShadow),
+                    isSelecting && !isActive && card.glowShadow
                   )}
                 >
                   <div
                     className={clsx(
-                      "w-20 h-20 rounded-3xl flex items-center justify-center mb-8 transition-transform group-hover:scale-110 group-hover:rotate-3 shadow-2xl",
-                      card.color === "blue" && "bg-blue-500/20 text-blue-400 shadow-blue-500/20",
-                      card.color === "purple" && "bg-purple-500/20 text-purple-400 shadow-purple-500/20",
-                      card.color === "cyan" && "bg-cyan-500/20 text-cyan-400 shadow-cyan-500/20",
-                      card.color === "amber" && "bg-amber-500/20 text-amber-400 shadow-amber-500/20",
-                      card.color === "orange" && "bg-orange-500/20 text-orange-400 shadow-orange-500/20"
+                      "w-20 h-20 rounded-3xl flex items-center justify-center mb-8 transition-all duration-200 group-hover:scale-110 group-hover:rotate-3 shadow-2xl",
+                      card.glowBg,
+                      card.glowText,
+                      card.glowIcon
                     )}
                   >
                     <Icon className="w-10 h-10" />
                   </div>
 
-                  <h3 className="font-mono text-xl font-bold mb-3 tracking-tight">
+                  <h3 className="font-mono text-sm font-bold mb-3 tracking-widest text-white/90 uppercase">
                     {locale === "zh-CN" ? card.label : card.labelEn}
                   </h3>
-                  <p className="text-xs text-zinc-500 text-center leading-relaxed font-mono uppercase tracking-wider px-4">
+                  <p className="font-mono text-[10px] text-white/40 text-center leading-relaxed tracking-wider px-2">
                     {locale === "zh-CN" ? card.desc : card.descEn}
                   </p>
 
-                  {/* Hover glow */}
+                  {/* Hover glow backdrop */}
                   <div
                     className={clsx(
                       "absolute inset-0 rounded-[40px] opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none blur-3xl -z-10",
-                      card.color === "blue" && "bg-blue-500/10",
-                      card.color === "purple" && "bg-purple-500/10",
-                      card.color === "cyan" && "bg-cyan-500/10",
-                      card.color === "amber" && "bg-amber-500/10",
-                      card.color === "orange" && "bg-orange-500/10"
+                      card.glowBg
                     )}
                   />
                 </motion.div>
