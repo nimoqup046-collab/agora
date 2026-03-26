@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion';
 import { useState, useCallback } from 'react';
 import MonacoEditor from '@monaco-editor/react';
-import ReactFlow, { Background, Controls, MiniMap, useNodesState, useEdgesState, addEdge, Connection } from 'reactflow';
+import ReactFlow, { Background, BackgroundVariant, Controls, MiniMap, useNodesState, useEdgesState, addEdge, Connection } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { MessageCircle, BookOpen, Brain, Send, ToggleLeft, ToggleRight, Globe, Search, Lightbulb, CheckCircle, FileText } from 'lucide-react';
 import ParticlesBackground from './ParticlesBackground';
@@ -18,8 +18,8 @@ const initialEdges = [{ id: 'e1', source: 'hyp1', target: 'verify', animated: tr
 
 export default function ResearchMode() {
   const [isAdvanced, setIsAdvanced] = useState(false);
-  const [confidence, setConfidence] = useState(92);
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
+  const [confidence] = useState(92);
+  const [nodes, , onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
   const onConnect = useCallback(
@@ -215,7 +215,7 @@ export default function ResearchMode() {
                   fitView
                   className="h-full"
                 >
-                  <Background variant="dots" gap={20} size={1} color="#333" />
+                  <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#333" />
                   <MiniMap style={{ background: '#000', border: '1px solid #333' }} />
                   <Controls />
                 </ReactFlow>
