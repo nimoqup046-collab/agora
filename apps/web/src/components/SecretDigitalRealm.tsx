@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { useState, useRef, useEffect } from 'react';
-import { X, ArrowLeft, Play, Pause, Download, MessageCircle, CloudRain, Zap, Coffee, Lightbulb } from 'lucide-react';
+import { ArrowLeft, CloudRain, Zap, Coffee, Lightbulb } from 'lucide-react';
 import ParticlesBackground from './ParticlesBackground';
 
 type Room = 'earth' | 'cosmic' | 'evolution' | 'physical';
@@ -165,11 +165,6 @@ export default function SecretDigitalRealm({ onClose }: { onClose: () => void })
   const handleNpcClick = (npc: any) => {
     const randomDialog = npc.dialogs[Math.floor(Math.random() * npc.dialogs.length)];
     setNpcDialog({ id: npc.id, name: npc.name, avatar: npc.avatar, text: randomDialog, options: ['继续聊天', '离开'] });
-  };
-
-  const handleCarHonk = () => {
-    // 模拟鸣笛视觉反馈
-    console.log('BEEP BEEP!');
   };
 
   return (

@@ -3,9 +3,9 @@
 import { motion } from 'framer-motion';
 import { useState, useCallback } from 'react';
 import MonacoEditor from '@monaco-editor/react';
-import ReactFlow, { Background, Controls, useNodesState, useEdgesState, addEdge } from 'reactflow';
+import ReactFlow, { Background, BackgroundVariant, Controls, useNodesState, useEdgesState, addEdge } from 'reactflow';
 import 'reactflow/dist/style.css';
-import { Dna, GitBranch, Zap, Activity, Database, ToggleLeft, ToggleRight, RefreshCw, History, ArrowUpRight } from 'lucide-react';
+import { Dna, GitBranch, Zap, Activity, Database, ToggleLeft, ToggleRight, RefreshCw, History } from 'lucide-react';
 import ParticlesBackground from './ParticlesBackground';
 import MemoryOrb from './MemoryOrb';
 
@@ -24,7 +24,7 @@ const initialEdges = [
 
 export default function EvolutionMode() {
   const [isAdvanced, setIsAdvanced] = useState(false);
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
+  const [nodes, , onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const onConnect = useCallback((params: any) => setEdges((eds) => addEdge(params, eds)), [setEdges]);
 
@@ -174,7 +174,7 @@ export default function EvolutionMode() {
                   fitView
                   className="h-full"
                 >
-                  <Background variant="dots" gap={20} size={1} color="#333" />
+                  <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#333" />
                   <Controls />
                 </ReactFlow>
               </div>

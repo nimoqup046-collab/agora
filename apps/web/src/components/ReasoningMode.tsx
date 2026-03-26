@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion';
 import { useState, useCallback } from 'react';
 import MonacoEditor from '@monaco-editor/react';
-import ReactFlow, { Background, Controls, MiniMap, useNodesState, useEdgesState, addEdge, Connection } from 'reactflow';
+import ReactFlow, { Background, BackgroundVariant, Controls, useNodesState, useEdgesState, addEdge, Connection } from 'reactflow';
 import 'reactflow/dist/style.css';
 import { BrainCircuit, ArrowRight, Zap, Shield, HelpCircle, ToggleLeft, ToggleRight, CheckCircle2, AlertTriangle, Scale, FileCode } from 'lucide-react';
 import ParticlesBackground from './ParticlesBackground';
@@ -22,8 +22,8 @@ const initialEdges = [
 
 export default function ReasoningMode() {
   const [isAdvanced, setIsAdvanced] = useState(false);
-  const [confidence, setConfidence] = useState(94.2);
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
+  const [confidence] = useState(94.2);
+  const [nodes, , onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
   const onConnect = useCallback(
@@ -218,7 +218,7 @@ export default function ReasoningMode() {
                   fitView
                   className="h-full"
                 >
-                  <Background variant="dots" gap={20} size={1} color="#333" />
+                  <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="#333" />
                   <Controls />
                 </ReactFlow>
               </div>

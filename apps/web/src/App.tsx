@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Users, LayoutGrid, Activity, ShieldCheck, Cpu } from 'lucide-react';
+import { LayoutGrid, Activity, ShieldCheck, Cpu } from 'lucide-react';
 import ProgrammingMode from './components/ProgrammingMode';
 import ResearchMode from './components/ResearchMode';
 import ReasoningMode from './components/ReasoningMode';
