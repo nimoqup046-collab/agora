@@ -1,33 +1,29 @@
-FROM node:22-alpine AS base
-RUN corepack enable pnpm
+# Build stage
+FROM node:20-alpine AS builder
 
-FROM base AS deps
 WORKDIR /app
-COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile
 
-FROM base AS builder
-WORKDIR /app
-COPY --from=deps /app/node_modules ./node_modules
+# Copy package files
+COPY package.json package-lock.json* ./
+
+# Install dependencies
+RUN npm ci
+
+# Copy source code
 COPY . .
-ENV NEXT_TELEMETRY_DISABLED=1
-RUN pnpm build
 
-FROM base AS runner
-WORKDIR /app
-ENV NODE_ENV=production
-ENV NEXT_TELEMETRY_DISABLED=1
+# Build the application
+RUN npm run build
 
-RUN addgroup --system --gid 1001 nodejs
-RUN adduser --system --uid 1001 nextjs
+# Production stage
+FROM nginx:alpine AS production
 
-COPY --from=builder /app/public ./public
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+# Copy built files from builder stage
+COPY --from=builder /app/dist /usr/share/nginx/html
 
-USER nextjs
-EXPOSE 3000
-ENV PORT=3000
-ENV HOSTNAME="0.0.0.0"
+# Copy nginx configuration
+COPY nginx.conf /etc/nginx/conf.d/default.conf
 
-CMD ["node", "server.js"]
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]

@@ -1,382 +1,146 @@
 /**
- * AGORA API client wrappers.
+ * AGORA API Client
+ * 集成后端 FastAPI 服务
  */
 
-// Always use the same-origin runtime proxy in production so browser requests
-// never bypass retry/redirect handling during Render cold starts.
-const DEV_DIRECT_API_URL =
-  process.env.NODE_ENV === "development" ? process.env.NEXT_PUBLIC_API_URL : undefined;
-const API_URL = DEV_DIRECT_API_URL || "/api/proxy";
+const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
 export interface Agent {
   agent_id: string;
   name: string;
-  role: string;
-  capabilities: string[];
-  is_active: boolean;
+  model: string;
+  status: 'online' | 'offline' | 'busy';
 }
 
 export interface Session {
-  id: string;
+  session_id: string;
   title: string;
   task: string;
-  status: string;
-  message_count: number;
   participant_ids: string[];
+  status: 'created' | 'running' | 'waiting_approval' | 'completed' | 'failed' | 'canceled';
   created_at: string;
   updated_at: string;
-  template?: {
-    id: string;
-    name: string;
-    category: string;
-    suggested_first_message?: string | null;
-  } | null;
 }
 
-export interface SessionMessage {
-  id: string;
+export interface Message {
+  message_id: string;
+  session_id: string;
   agent_id: string;
-  agent_name: string;
   content: string;
   timestamp: string;
+  message_type: 'text' | 'code' | 'system';
 }
 
-export interface SessionDetail extends Session {
-  messages: SessionMessage[];
-}
-
-export interface DecomposeResponse {
-  session_id: string;
-  task: string;
-  subtasks: Array<{
-    id: number;
-    description: string;
-    assigned_to: string;
-    priority: number;
-    status?: string;
-  }>;
-}
-
-export interface ActResponse {
-  action_type: string;
-  agent_id: string;
-  requires_approval: boolean;
-  rationale: string;
-  output: Record<string, unknown>;
-}
-
-export interface ActConfirmResponse {
-  status: string;
-  pr_url?: string;
-  pr_number?: number;
-  branch?: string;
+export interface CreateSessionRequest {
   title?: string;
-  sha?: string;
+  task: string;
+  participant_ids?: string[];
 }
 
-export interface VoteRequest {
-  topic: string;
-  agent_votes: Record<string, string>;
-  rationales?: Record<string, string>;
-}
-
-export interface VoteResponse {
-  topic: string;
-  decision: string;
-  yea: number;
-  nay: number;
-  abstain: number;
-  votes: Array<{
-    agent_id: string;
-    agent_name: string;
-    option: string;
-    rationale: string;
-  }>;
-}
-
-export interface HealthResponse {
+export interface CreateSessionResponse {
+  session_id: string;
+  title: string;
+  task: string;
+  participant_ids: string[];
   status: string;
-  app?: string;
-  agents?: number;
+  created_at: string;
 }
 
-export interface SessionTemplate {
-  id: string;
-  name: string;
-  category: "scientific" | "engineering" | "review" | string;
-  description: string;
-  suggested_first_message?: string;
-}
+class AgoraAPI {
+  private baseURL: string;
 
-async function request<T>(path: string, options?: RequestInit): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, {
-    headers: { "Content-Type": "application/json" },
-    ...options,
-  });
-
-  const raw = await res.text();
-  if (!res.ok) {
-    throw new Error(`API ${res.status}: ${raw}`);
+  constructor(baseURL: string = API_BASE_URL) {
+    this.baseURL = baseURL;
   }
 
-  try {
-    return JSON.parse(raw) as T;
-  } catch {
-    throw new Error(
-      `API ${res.status}: invalid JSON response (path=${path}, sample=${raw.slice(0, 180)})`
-    );
-  }
-}
+  private async request<T>(
+    endpoint: string,
+    options: RequestInit = {}
+  ): Promise<T> {
+    const url = `${this.baseURL}${endpoint}`;
+    const response = await fetch(url, {
+      ...options,
+      headers: {
+        'Content-Type': 'application/json',
+        ...options.headers,
+      },
+    });
 
-export const agentsApi = {
-  list: () => request<{ agents: Agent[] }>("/agents/").then((r) => r.agents),
-  get: (agentId: string) => request<Agent>(`/agents/${agentId}`),
-};
-
-export const sessionsApi = {
-  list: () => request<{ sessions: Session[] }>("/sessions/").then((r) => r.sessions),
-  get: (sessionId: string) => request<SessionDetail>(`/sessions/${sessionId}`),
-  create: (params: { title?: string; task: string; participant_ids?: string[]; template_id?: string }) =>
-    request<Session>("/sessions/", {
-      method: "POST",
-      body: JSON.stringify(params),
-    }),
-  delete: (sessionId: string) =>
-    request<{ status: string }>(`/sessions/${sessionId}`, { method: "DELETE" }),
-};
-
-const FALLBACK_TEMPLATES: SessionTemplate[] = [
-  {
-    id: "scientific-hypothesis-lab",
-    name: "Scientific Hypothesis Lab",
-    category: "scientific",
-    description: "Use multi-agent debate to propose testable hypotheses and validation steps.",
-    suggested_first_message:
-      "请围绕该科学问题提出3个可验证假设，并给出实验/数据验证路径与风险点。",
-  },
-  {
-    id: "engineering-implementation-sprint",
-    name: "Engineering Implementation Sprint",
-    category: "engineering",
-    description: "Break down an engineering goal into architecture, milestones, and execution plan.",
-    suggested_first_message:
-      "请输出一个可落地的技术方案：架构、里程碑、风险、回滚方案、PR拆分建议。",
-  },
-  {
-    id: "code-review-war-room",
-    name: "Code Review War Room",
-    category: "review",
-    description: "Coordinate deep technical review and produce actionable improvement items.",
-    suggested_first_message:
-      "请从安全、性能、可维护性三方面审查方案，并给出可执行修复清单。",
-  },
-];
-
-export const templatesApi = {
-  list: async (): Promise<SessionTemplate[]> => {
-    // Template endpoint is optional in current backend phase.
-    // Return local fallback immediately to avoid noisy 502s during API cold start.
-    return FALLBACK_TEMPLATES;
-  },
-};
-
-export const councilApi = {
-  sendMessage: (sessionId: string, content: string, agentId?: string) =>
-    request<{ message_id: string; agent_id: string; agent_name: string; content: string }>(
-      `/council/${sessionId}/message`,
-      {
-        method: "POST",
-        body: JSON.stringify({ content, agent_id: agentId }),
-      }
-    ),
-
-  decompose: (sessionId: string, task?: string) =>
-    request<DecomposeResponse>(`/council/${sessionId}/decompose`, {
-      method: "POST",
-      body: JSON.stringify({ task }),
-    }),
-
-  act: (
-    sessionId: string,
-    params: {
-      agent_id: string;
-      action_type: string;
-      parameters?: Record<string, unknown>;
-      rationale?: string;
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ detail: response.statusText }));
+      throw new Error(error.detail || 'API request failed');
     }
-  ) =>
-    request<ActResponse>(`/council/${sessionId}/act`, {
-      method: "POST",
-      body: JSON.stringify(params),
-    }),
 
-  confirmAct: (
+    return response.json();
+  }
+
+  // 健康检查
+  async healthCheck(): Promise<{ status: string; app: string; agents: number }> {
+    return this.request('/health');
+  }
+
+  // 获取所有 Agents
+  async getAgents(): Promise<Agent[]> {
+    return this.request('/agents');
+  }
+
+  // 创建会话
+  async createSession(data: CreateSessionRequest): Promise<CreateSessionResponse> {
+    return this.request('/sessions/', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  }
+
+  // 获取所有会话
+  async getSessions(): Promise<{ sessions: Session[] }> {
+    return this.request('/sessions/');
+  }
+
+  // 获取单个会话详情
+  async getSession(sessionId: string): Promise<Session & { messages: Message[] }> {
+    return this.request(`/sessions/${sessionId}`);
+  }
+
+  // 更新会话状态
+  async updateSessionStatus(
     sessionId: string,
-    actionResult: Record<string, unknown>,
-    sessionConfirmId?: string
-  ) =>
-    request<ActConfirmResponse>(`/council/${sessionId}/act/confirm`, {
-      method: "POST",
-      body: JSON.stringify({
-        action_result: actionResult,
-        session_id: sessionConfirmId,
-      }),
-    }),
+    status: Session['status']
+  ): Promise<{ status: string; session_id: string; new_status: string }> {
+    return this.request(`/sessions/${sessionId}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    });
+  }
 
-  vote: (sessionId: string, params: VoteRequest) =>
-    request<VoteResponse>(`/council/${sessionId}/vote`, {
-      method: "POST",
-      body: JSON.stringify(params),
-    }),
+  // 删除会话
+  async deleteSession(sessionId: string): Promise<{ status: string; session_id: string }> {
+    return this.request(`/sessions/${sessionId}`, {
+      method: 'DELETE',
+    });
+  }
 
-  streamRoundUrl: (sessionId: string, userMessage: string, turns = 1) =>
-    `${API_URL}/council/${sessionId}/stream?user_message=${encodeURIComponent(userMessage)}&turns=${turns}`,
-};
+  // 发送消息到 Council
+  async sendCouncilMessage(sessionId: string, content: string): Promise<any> {
+    return this.request(`/council/${sessionId}/turn`, {
+      method: 'POST',
+      body: JSON.stringify({ content }),
+    });
+  }
 
-// ── Evolution ─────────────────────────────────────────────────────────────────
+  // 获取 Council 流式消息 (SSE)
+  async streamCouncilMessages(sessionId: string): Promise<ReadableStream> {
+    const url = `${this.baseURL}/council/${sessionId}/stream`;
+    const response = await fetch(url, {
+      method: 'GET',
+    });
 
-export interface Soul {
-  id: string;
-  agent_id: string;
-  version: number;
-  soul_content: string;
-  delta_summary: string;
-  trigger_session_ids: string[];
-  created_at: string;
-  approved_at: string | null;
-  approved_by: string | null;
+    if (!response.ok) {
+      throw new Error('Failed to connect to council stream');
+    }
+
+    return response.body!;
+  }
 }
 
-export interface EvolutionTriggerResponse {
-  drafts: Array<{
-    agent_id: string;
-    soul_id: string;
-    delta_summary: string;
-    version: number;
-  }>;
-  sessions_analyzed: number;
-  agents_evolved: number;
-}
-
-export const evolutionApi = {
-  trigger: (sessionCount = 10) =>
-    request<EvolutionTriggerResponse>("/evolution/trigger", {
-      method: "POST",
-      body: JSON.stringify({ session_count: sessionCount }),
-    }),
-
-  listSouls: (agentId: string) =>
-    request<{ agent_id: string; agent_name: string; souls: Soul[]; current_version: number }>(
-      `/evolution/souls/${agentId}`
-    ),
-
-  approveSoul: (soulId: string) =>
-    request<{ soul: Soul; agent_id: string; activated: boolean }>(
-      `/evolution/souls/${soulId}/approve`,
-      { method: "POST" }
-    ),
-
-  retireSkills: (minUsage = 10, maxSuccessRate = 0.3) =>
-    request<{ retired: number; retired_skill_ids: string[]; criteria: object }>(
-      "/evolution/retire-skills",
-      {
-        method: "POST",
-        body: JSON.stringify({ min_usage: minUsage, max_success_rate: maxSuccessRate }),
-      }
-    ),
-};
-
-// ── Skills ────────────────────────────────────────────────────────────────────
-
-export interface Skill {
-  id: string;
-  name: string;
-  description: string;
-  domain: string;
-  template: string;
-  examples: Array<{ input: string; output: string }>;
-  agent_scope: string[] | null;
-  source_session_ids: string[];
-  created_by_agent_id: string;
-  usage_count: number;
-  success_count: number;
-  success_rate: number;
-  avg_quality_score: number | null;
-  version: number;
-  parent_skill_id: string | null;
-  approved_at: string | null;
-  approved_by: string | null;
-  deprecated_at: string | null;
-  created_at: string;
-  updated_at: string;
-}
-
-export interface CreateSkillParams {
-  name: string;
-  description: string;
-  domain: string;
-  template: string;
-  examples?: Array<{ input: string; output: string }>;
-  agent_scope?: string[] | null;
-  source_session_ids?: string[];
-  created_by_agent_id?: string;
-}
-
-export const skillsApi = {
-  list: (params?: { domain?: string; agent_id?: string; approved_only?: boolean }) => {
-    const qs = new URLSearchParams();
-    if (params?.domain) qs.set("domain", params.domain);
-    if (params?.agent_id) qs.set("agent_id", params.agent_id);
-    if (params?.approved_only) qs.set("approved_only", "true");
-    return request<{ skills: Skill[]; total: number }>(`/skills/${qs.toString() ? `?${qs}` : ""}`);
-  },
-
-  get: (skillId: string) =>
-    request<{ skill: Skill }>(`/skills/${skillId}`).then((r) => r.skill),
-
-  create: (params: CreateSkillParams) =>
-    request<{ skill: Skill; embedded: boolean }>("/skills/", {
-      method: "POST",
-      body: JSON.stringify(params),
-    }),
-
-  approve: (skillId: string) =>
-    request<{ skill: Skill; activated: boolean }>(`/skills/${skillId}/approve`, {
-      method: "POST",
-    }),
-
-  delete: (skillId: string) =>
-    request<{ deleted: boolean; skill_id: string }>(`/skills/${skillId}`, {
-      method: "DELETE",
-    }),
-
-  search: (query: string, agentId?: string, limit = 3) =>
-    request<{ results: Array<{ skill: Skill; similarity: number }>; query: string }>(
-      "/skills/search",
-      {
-        method: "POST",
-        body: JSON.stringify({ query, agent_id: agentId, limit }),
-      }
-    ),
-
-  feedback: (skillId: string, positive: boolean) =>
-    request<{ recorded: boolean; positive: boolean; skill_id: string }>(
-      `/skills/${skillId}/feedback`,
-      {
-        method: "POST",
-        body: JSON.stringify({ positive }),
-      }
-    ),
-
-  deprecate: (skillId: string) =>
-    request<{ deprecated: boolean; skill: Skill }>(`/skills/${skillId}/deprecate`, {
-      method: "POST",
-    }),
-};
-
-
-// ── Health ────────────────────────────────────────────────────────────────────
-
-export const healthApi = {
-  check: () => request<HealthResponse>("/health"),
-};
+export const agoraAPI = new AgoraAPI();
