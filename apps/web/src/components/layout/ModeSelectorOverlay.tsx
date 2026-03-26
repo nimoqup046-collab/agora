@@ -1,8 +1,7 @@
-"use client";
+﻿"use client";
 
-import { useEffect, useMemo, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { clsx } from "clsx";
+import { Beaker, BrainCircuit, Code2, Palette, X, Zap } from "lucide-react";
 import { useI18n } from "@/components/i18n/LanguageProvider";
 import type { PanelMode } from "@/types";
 
@@ -13,21 +12,77 @@ interface ModeSelectorOverlayProps {
   onSelect: (mode: PanelMode) => void;
 }
 
-interface ModeCardDef {
+const MODE_RING: Array<{
   mode: PanelMode;
-  icon: string;
+  icon: typeof Code2;
   color: string;
   glow: string;
-  angle: number;
-}
-
-const MODE_CARDS: ModeCardDef[] = [
-  { mode: "coding", icon: "</>", color: "#3dd8ff", glow: "rgba(61,216,255,0.35)", angle: -90 },
-  { mode: "research", icon: "SCI", color: "#a78bfa", glow: "rgba(167,139,250,0.34)", angle: -20 },
-  { mode: "reasoning", icon: "LOG", color: "#34d399", glow: "rgba(52,211,153,0.34)", angle: 50 },
-  { mode: "evolution", icon: "DNA", color: "#fbbf24", glow: "rgba(251,191,36,0.32)", angle: 130 },
-  { mode: "creation", icon: "ART", color: "#fb7185", glow: "rgba(251,113,133,0.33)", angle: 200 },
+  x: number;
+  y: number;
+}> = [
+  { mode: "coding", icon: Code2, color: "#38bdf8", glow: "rgba(56,189,248,0.35)", x: 0, y: -220 },
+  { mode: "research", icon: Beaker, color: "#a78bfa", glow: "rgba(167,139,250,0.35)", x: 210, y: -70 },
+  { mode: "reasoning", icon: BrainCircuit, color: "#22d3ee", glow: "rgba(34,211,238,0.32)", x: 130, y: 190 },
+  { mode: "evolution", icon: Zap, color: "#f59e0b", glow: "rgba(245,158,11,0.35)", x: -130, y: 190 },
+  { mode: "creation", icon: Palette, color: "#fb7185", glow: "rgba(251,113,133,0.35)", x: -210, y: -70 },
 ];
+
+function ModeCard({
+  mode,
+  color,
+  glow,
+  selected,
+  label,
+  desc,
+  onClick,
+  Icon,
+}: {
+  mode: PanelMode;
+  color: string;
+  glow: string;
+  selected: boolean;
+  label: string;
+  desc: string;
+  onClick: () => void;
+  Icon: typeof Code2;
+}) {
+  return (
+    <motion.button
+      type="button"
+      onClick={onClick}
+      whileHover={{ y: -8, scale: 1.03 }}
+      className="relative w-[250px] h-[142px] rounded-3xl border text-left px-5 py-4 backdrop-blur-2xl"
+      style={{
+        background: selected ? "rgba(255,255,255,0.12)" : "rgba(255,255,255,0.06)",
+        borderColor: selected ? "rgba(255,255,255,0.55)" : `${color}66`,
+        boxShadow: `0 0 35px ${selected ? glow : "rgba(0,0,0,0.15)"}`,
+      }}
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div
+          className="w-11 h-11 rounded-xl border flex items-center justify-center"
+          style={{ borderColor: `${color}88`, color }}
+        >
+          <Icon className="w-5 h-5" />
+        </div>
+        {selected && (
+          <span className="text-[9px] uppercase tracking-[0.18em] px-2 py-0.5 rounded-full border border-white/35 text-white/90">
+            Active
+          </span>
+        )}
+      </div>
+      <p className="mt-3 font-semibold tracking-[0.08em] text-white text-lg">{label}</p>
+      <p className="mt-1 text-xs text-slate-300/90 leading-relaxed">{desc}</p>
+
+      <span
+        className="pointer-events-none absolute inset-0 rounded-3xl opacity-0 hover:opacity-100 transition-opacity"
+        style={{
+          background: `linear-gradient(140deg, ${color}33, transparent 45%)`,
+        }}
+      />
+    </motion.button>
+  );
+}
 
 export function ModeSelectorOverlay({
   open,
@@ -36,213 +91,108 @@ export function ModeSelectorOverlay({
   onSelect,
 }: ModeSelectorOverlayProps) {
   const { locale, t } = useI18n();
-  const [selecting, setSelecting] = useState<PanelMode | null>(null);
-  const [viewport, setViewport] = useState({ w: 1440, h: 900 });
-
-  useEffect(() => {
-    const update = () => {
-      setViewport({ w: window.innerWidth, h: window.innerHeight });
-    };
-    update();
-    window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
-  }, []);
-
-  useEffect(() => {
-    if (!open) {
-      setSelecting(null);
-    }
-  }, [open]);
-
-  const isCompact = viewport.w < 1040;
-  const radiusX = Math.min(Math.max(220, viewport.w * 0.24), 360);
-  const radiusY = Math.min(Math.max(140, viewport.h * 0.22), 250);
-
-  const positionedCards = useMemo(
-    () =>
-      MODE_CARDS.map((card) => {
-        const rad = (card.angle * Math.PI) / 180;
-        const x = Math.cos(rad) * radiusX;
-        const y = Math.sin(rad) * radiusY;
-        return { ...card, x, y };
-      }),
-    [radiusX, radiusY]
-  );
-
-  const handleSelect = (mode: PanelMode) => {
-    setSelecting(mode);
-    window.setTimeout(() => {
-      onSelect(mode);
-      onClose();
-    }, 220);
-  };
 
   return (
     <AnimatePresence>
       {open && (
         <motion.div
-          className="fixed inset-0 z-[90] bg-[#01040f]/92 backdrop-blur-[14px]"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[100] bg-[#02050f]/95 backdrop-blur-3xl"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) onClose();
+          }}
         >
-          <div className="mode-selector-noise absolute inset-0 pointer-events-none" />
-          <div className="mode-selector-scanline absolute inset-0 pointer-events-none" />
-          <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_50%_46%,rgba(56,189,248,0.22),transparent_42%)]" />
-          <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_74%_70%,rgba(168,85,247,0.16),transparent_36%)]" />
+          <div className="absolute inset-0 overflow-hidden pointer-events-none">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_30%,rgba(56,189,248,0.25),transparent_40%),radial-gradient(circle_at_20%_80%,rgba(59,130,246,0.18),transparent_35%),radial-gradient(circle_at_80%_85%,rgba(168,85,247,0.18),transparent_35%)]" />
+            {Array.from({ length: 28 }).map((_, idx) => (
+              <motion.span
+                key={idx}
+                className="absolute w-1 h-1 rounded-full bg-cyan-300/35"
+                initial={{
+                  x: Math.random() * 1600,
+                  y: Math.random() * 1000,
+                  opacity: Math.random() * 0.4 + 0.15,
+                }}
+                animate={{ y: [null, -120], opacity: [null, 0] }}
+                transition={{ duration: Math.random() * 7 + 6, repeat: Infinity, ease: "linear" }}
+              />
+            ))}
+          </div>
 
-          <div className="relative h-full w-full flex flex-col">
-            <div className="h-14 px-4 sm:px-6 flex items-center justify-between border-b border-cyan-300/18">
+          <div className="relative z-10 h-full">
+            <div className="h-12 border-b border-white/10 px-5 flex items-center justify-between">
               <div>
-                <p className="font-tech text-xs tracking-[0.24em] text-cyan-200">MODE SELECTOR</p>
-                <p className="text-[11px] text-slate-300/80">
-                  {locale === "zh-CN" ? "选择要进入的智慧维度" : "Select the intelligence dimension"}
+                <p className="font-mono text-cyan-100 text-sm tracking-[0.25em] uppercase">Mode Selector</p>
+                <p className="text-[11px] text-slate-400">
+                  {locale === "zh-CN" ? "选择要进入的智慧维度" : "Choose a workspace dimension"}
                 </p>
               </div>
               <button
                 type="button"
                 onClick={onClose}
-                className="text-xs px-3 py-1 rounded border border-slate-500/45 text-slate-300 hover:text-slate-100 hover:border-slate-300/65 transition-colors"
+                className="w-11 h-9 rounded-lg border border-white/15 text-slate-200 hover:border-cyan-300/45 hover:text-cyan-100 transition-colors"
               >
-                ESC
+                <X className="w-4 h-4 mx-auto" />
               </button>
             </div>
 
-            <div className="flex-1 relative overflow-hidden">
-              <div className="absolute inset-0">
-                {!isCompact && (
-                  <svg
-                    className="absolute inset-0 w-full h-full pointer-events-none opacity-70"
-                    viewBox="0 0 1000 1000"
-                    preserveAspectRatio="none"
-                  >
-                    {positionedCards.map((card) => (
-                      <line
-                        key={card.mode}
-                        x1={500}
-                        y1={500}
-                        x2={500 + card.x * 1.45}
-                        y2={500 + card.y * 1.45}
-                        stroke={card.mode === currentMode ? "#67e8f9" : "rgba(103,232,249,0.34)"}
-                        strokeWidth={card.mode === currentMode ? 1.8 : 1.1}
-                        strokeDasharray="5 6"
-                        className="dash-flow"
-                      />
-                    ))}
-                  </svg>
-                )}
+            <div className="hidden lg:block relative h-[calc(100%-3rem)]">
+              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[640px] h-[640px] rounded-full border border-cyan-300/20" />
+              <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[460px] h-[460px] rounded-full border border-white/10" />
 
+              <motion.button
+                type="button"
+                whileHover={{ scale: 1.04 }}
+                onClick={() => onSelect(currentMode)}
+                className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-44 h-44 rounded-full border border-cyan-300/30 bg-cyan-500/10 backdrop-blur-2xl text-center"
+              >
+                <p className="font-mono text-cyan-100 text-3xl tracking-[0.2em]">AGORA</p>
+                <p className="text-[11px] text-cyan-200/75 mt-2 uppercase tracking-[0.16em]">
+                  {locale === "zh-CN" ? "蜂群核心" : "Swarm Core"}
+                </p>
+              </motion.button>
+
+              {MODE_RING.map((entry, idx) => (
                 <motion.div
-                  className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-44 h-44 rounded-full border border-cyan-300/28 bg-cyan-500/8 shadow-[0_0_80px_rgba(56,189,248,0.24)] flex items-center justify-center"
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 26, repeat: Infinity, ease: "linear" }}
+                  key={entry.mode}
+                  initial={{ opacity: 0, scale: 0.88 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: idx * 0.06, duration: 0.28 }}
+                  className="absolute left-1/2 top-1/2"
+                  style={{ transform: `translate(${entry.x - 125}px, ${entry.y - 71}px)` }}
                 >
-                  <div className="mode-core-ring absolute inset-3 rounded-full border border-cyan-200/20" />
-                  <div className="text-center">
-                    <p className="font-tech text-cyan-100 text-lg tracking-[0.2em]">AGORA</p>
-                    <p className="text-[10px] text-slate-400 mt-1">
-                      {locale === "zh-CN" ? "蜂群智慧核心" : "SWARM CORE"}
-                    </p>
-                  </div>
+                  <ModeCard
+                    mode={entry.mode}
+                    color={entry.color}
+                    glow={entry.glow}
+                    selected={currentMode === entry.mode}
+                    label={t(`menu.${entry.mode}`)}
+                    desc={t(`menu.${entry.mode}Desc`)}
+                    onClick={() => onSelect(entry.mode)}
+                    Icon={entry.icon}
+                  />
                 </motion.div>
+              ))}
+            </div>
 
-                {!isCompact &&
-                  positionedCards.map((card, idx) => {
-                    const isActive = currentMode === card.mode;
-                    const isSelecting = selecting === card.mode;
-                    return (
-                      <div
-                        key={card.mode}
-                        className="absolute"
-                        style={{
-                          left: "50%",
-                          top: "50%",
-                          transform: `translate(-50%, -50%) translate(${card.x}px, ${card.y}px)`,
-                        }}
-                      >
-                        <motion.button
-                          type="button"
-                          onClick={() => handleSelect(card.mode)}
-                          initial={{ opacity: 0, scale: 0.88 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          exit={{ opacity: 0, scale: 0.9 }}
-                          transition={{ duration: 0.28, delay: idx * 0.05 }}
-                          whileHover={{ scale: 1.04, y: -4 }}
-                          whileTap={{ scale: 0.98 }}
-                          className={clsx(
-                            "w-[230px] rounded-2xl border p-4 text-left",
-                            "bg-gradient-to-br backdrop-blur-xl transition-all duration-200",
-                            isActive ? "ring-1 ring-cyan-200/90" : "ring-1 ring-transparent"
-                          )}
-                          style={{
-                            borderColor: `${card.color}66`,
-                            backgroundImage:
-                              "linear-gradient(165deg, rgba(14,24,48,0.92), rgba(9,14,28,0.85))",
-                            boxShadow: isActive ? `0 0 42px ${card.glow}` : "0 0 24px rgba(59,130,246,0.2)",
-                          }}
-                        >
-                          <p className="font-tech text-[10px] tracking-[0.16em]" style={{ color: card.color }}>
-                            {card.icon}
-                          </p>
-                          <p className="mt-1 text-sm font-semibold text-slate-100">{t(`menu.${card.mode}`)}</p>
-                          <p className="mt-1 text-[11px] leading-relaxed text-slate-300/85">
-                            {t(`menu.${card.mode}Desc`)}
-                          </p>
-                        </motion.button>
-                      </div>
-                    );
-                  })}
-
-                {isCompact && (
-                  <div className="absolute inset-x-4 bottom-6 grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {MODE_CARDS.map((card, idx) => {
-                      const isActive = currentMode === card.mode;
-                      const isSelecting = selecting === card.mode;
-                      return (
-                        <motion.button
-                          key={card.mode}
-                          type="button"
-                          onClick={() => handleSelect(card.mode)}
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: 8 }}
-                          transition={{ duration: 0.22, delay: idx * 0.03 }}
-                          className={clsx(
-                            "rounded-xl border p-3 text-left bg-[#091224]/88 backdrop-blur-xl",
-                            isActive ? "ring-1 ring-cyan-200/90" : "ring-1 ring-transparent"
-                          )}
-                          style={{
-                            borderColor: `${card.color}66`,
-                            boxShadow: isActive ? `0 0 24px ${card.glow}` : "0 0 14px rgba(59,130,246,0.16)",
-                          }}
-                        >
-                          <p className="font-tech text-[10px] tracking-[0.14em]" style={{ color: card.color }}>
-                            {card.icon}
-                          </p>
-                          <p className="mt-1 text-sm font-semibold text-slate-100">{t(`menu.${card.mode}`)}</p>
-                          <p className="mt-1 text-[11px] leading-relaxed text-slate-300/85">
-                            {t(`menu.${card.mode}Desc`)}
-                          </p>
-                        </motion.button>
-                      );
-                    })}
-                  </div>
-                )}
-              </div>
+            <div className="lg:hidden h-[calc(100%-3rem)] overflow-y-auto p-4 grid grid-cols-1 sm:grid-cols-2 gap-4 content-start">
+              {MODE_RING.map((entry) => (
+                <ModeCard
+                  key={entry.mode}
+                  mode={entry.mode}
+                  color={entry.color}
+                  glow={entry.glow}
+                  selected={currentMode === entry.mode}
+                  label={t(`menu.${entry.mode}`)}
+                  desc={t(`menu.${entry.mode}Desc`)}
+                  onClick={() => onSelect(entry.mode)}
+                  Icon={entry.icon}
+                />
+              ))}
             </div>
           </div>
-
-          <AnimatePresence>
-            {selecting && (
-              <motion.div
-                className="absolute inset-0 pointer-events-none bg-[radial-gradient(circle_at_center,rgba(103,232,249,0.22),transparent_58%)]"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.2 }}
-              />
-            )}
-          </AnimatePresence>
         </motion.div>
       )}
     </AnimatePresence>

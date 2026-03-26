@@ -1,16 +1,21 @@
-"use client";
+﻿"use client";
 
-import Link from "next/link";
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
-import type { CSSProperties } from "react";
+import { Beaker, BrainCircuit, Code2, Palette, Zap } from "lucide-react";
 import { LanguageToggle } from "@/components/i18n/LanguageToggle";
 import { useI18n } from "@/components/i18n/LanguageProvider";
-import { WisdomHall } from "@/components/home/WisdomHall";
-import { PixelIcon, MENU_ITEMS } from "@/components/menu/AgoraMenu";
 import { ModeSelectorOverlay } from "@/components/layout/ModeSelectorOverlay";
 import type { PanelMode } from "@/types";
+
+const QUICK_MODES: Array<{ mode: PanelMode; icon: typeof Code2; color: string }> = [
+  { mode: "coding", icon: Code2, color: "#38bdf8" },
+  { mode: "research", icon: Beaker, color: "#a78bfa" },
+  { mode: "reasoning", icon: BrainCircuit, color: "#22d3ee" },
+  { mode: "evolution", icon: Zap, color: "#f59e0b" },
+  { mode: "creation", icon: Palette, color: "#fb7185" },
+];
 
 function routeForMode(mode: PanelMode) {
   return mode === "research" ? "/council" : `/council?mode=${mode}`;
@@ -22,146 +27,125 @@ export default function HomePage() {
   const [selectorOpen, setSelectorOpen] = useState(false);
   const [activeMode, setActiveMode] = useState<PanelMode>("research");
 
-  const modules = useMemo(
-    () =>
-      MENU_ITEMS.map((item) => ({
-        ...item,
-        href: routeForMode(item.mode),
-      })),
-    []
-  );
-
   const enterMode = (mode: PanelMode) => {
     setActiveMode(mode);
     router.push(routeForMode(mode));
   };
 
-  return (
-    <main className="home-cosmos min-h-screen relative overflow-hidden px-4 py-4 sm:px-6 sm:py-6">
-      <div className="home-cosmos-grid" />
-      <div className="home-cosmos-noise" />
-      <div className="home-orb home-orb-cyan" />
-      <div className="home-orb home-orb-violet" />
-      <div className="home-orb home-orb-gold" />
+  const quick = useMemo(() => QUICK_MODES, []);
 
-      <div className="relative z-10">
-        <header className="agora-panel rounded-2xl px-4 sm:px-6 py-3 flex items-center gap-3 border border-cyan-400/30">
+  return (
+    <main className="min-h-screen bg-[#050505] text-white overflow-hidden relative">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_20%,rgba(56,189,248,0.18),transparent_40%),radial-gradient(circle_at_80%_15%,rgba(168,85,247,0.16),transparent_40%),radial-gradient(circle_at_50%_85%,rgba(14,165,233,0.14),transparent_35%)]" />
+      <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.025)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:44px_44px] opacity-35" />
+
+      <div className="relative z-10 px-4 py-4 sm:px-6 sm:py-6">
+        <header className="h-12 bg-black/40 backdrop-blur-2xl border border-white/10 rounded-2xl flex items-center px-4 sm:px-6">
           <button
             onClick={() => setSelectorOpen(true)}
-            className="group rounded-lg px-2 py-1.5 hover:bg-cyan-500/10 transition-colors"
+            className="flex items-center gap-3 group"
             title={locale === "zh-CN" ? "打开模式选择器" : "Open mode selector"}
           >
-            <p className="font-tech text-cyan-200 text-sm tracking-[0.34em] group-hover:text-cyan-100">AGORA</p>
-            <p className="text-[10px] text-slate-400 tracking-[0.2em] uppercase">{t("command.center")}</p>
+            <div className="w-7 h-7 rounded-lg bg-cyan-500 shadow-[0_0_22px_rgba(34,211,238,0.45)] flex items-center justify-center text-[11px] font-mono font-black">A</div>
+            <div>
+              <p className="font-mono text-base tracking-[0.18em] text-cyan-100 group-hover:text-cyan-50">AGORA</p>
+              <p className="text-[10px] text-slate-400 uppercase tracking-[0.2em]">{t("command.center")}</p>
+            </div>
           </button>
 
           <div className="ml-auto flex items-center gap-2">
-            <span className="text-[10px] border border-emerald-500/45 text-emerald-300 px-2 py-1 rounded">
-              {t("home.online")}
-            </span>
+            <span className="text-[10px] px-2 py-1 border border-emerald-500/45 text-emerald-300 rounded uppercase">{t("home.online")}</span>
             <LanguageToggle />
           </div>
         </header>
 
-        <section className="mt-4 grid grid-cols-1 xl:grid-cols-[1.15fr_0.85fr] gap-4">
+        <section className="mt-5 grid grid-cols-1 xl:grid-cols-[1.25fr_0.75fr] gap-4">
           <motion.div
-            initial={{ opacity: 0, y: 8 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-            className="agora-panel rounded-2xl p-5 sm:p-6 border border-cyan-400/30"
+            className="rounded-3xl border border-cyan-300/28 bg-black/35 backdrop-blur-2xl p-6"
           >
-            <p className="font-tech text-[11px] uppercase tracking-[0.28em] text-cyan-300/90">
-              {locale === "zh-CN" ? "群星工作区门户" : "SWARM WORKSPACE GATEWAY"}
+            <p className="text-[11px] font-mono uppercase tracking-[0.2em] text-cyan-200/95">
+              {locale === "zh-CN" ? "智慧协同终端" : "Collective Intelligence Terminal"}
             </p>
-            <h1 className="font-tech text-5xl sm:text-6xl mt-3 text-slate-100 leading-none">AGORA</h1>
-            <p className="font-wisdom text-lg sm:text-xl mt-2 text-amber-200/90">{t("home.subtitle")}</p>
+            <h1 className="mt-3 text-6xl font-tech text-white">AGORA</h1>
+            <p className="mt-2 text-xl text-amber-200/90 font-wisdom">{t("home.subtitle")}</p>
 
-            <blockquote className="mt-5 p-4 rounded-xl module-divider font-wisdom text-sm sm:text-base leading-relaxed text-slate-200/90 border-cyan-400/25">
+            <blockquote className="mt-5 rounded-2xl border border-cyan-300/24 bg-cyan-500/8 px-4 py-3 text-sm text-slate-200/90 leading-relaxed font-wisdom">
               <p>{t("home.quoteA")}</p>
-              <p className="mt-2">{t("home.quoteB")}</p>
+              <p className="mt-1.5">{t("home.quoteB")}</p>
             </blockquote>
 
             <div className="mt-5 flex flex-wrap gap-3">
               <button
                 onClick={() => enterMode("research")}
-                className="px-5 py-2.5 rounded-xl border border-cyan-400/45 bg-cyan-500/12 text-cyan-100 font-tech text-sm tracking-[0.12em] hover:bg-cyan-500/20 transition-colors"
+                className="px-5 py-2.5 rounded-xl border border-cyan-400/45 bg-cyan-500/14 text-cyan-100 text-sm font-mono uppercase tracking-[0.12em] hover:bg-cyan-500/22 transition-colors"
               >
-                {locale === "zh-CN" ? "进入议会" : "ENTER COUNCIL"}
+                {locale === "zh-CN" ? "进入工作台" : "Enter Workspace"}
               </button>
               <button
                 onClick={() => setSelectorOpen(true)}
-                className="px-5 py-2.5 rounded-xl border border-violet-400/45 bg-violet-500/12 text-violet-100 font-tech text-sm tracking-[0.12em] hover:bg-violet-500/20 transition-colors"
+                className="px-5 py-2.5 rounded-xl border border-violet-400/45 bg-violet-500/14 text-violet-100 text-sm font-mono uppercase tracking-[0.12em] hover:bg-violet-500/22 transition-colors"
               >
-                {locale === "zh-CN" ? "选择模式" : "SELECT MODE"}
+                {t("menu.switchMode")}
               </button>
-              <Link
-                href="/council"
-                className="px-5 py-2.5 rounded-xl border border-amber-400/45 bg-amber-500/10 text-amber-100 font-tech text-sm tracking-[0.12em] hover:bg-amber-500/18 transition-colors"
-              >
-                {t("home.enter")}
-              </Link>
             </div>
 
-            <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-              {modules.map((mod, index) => (
-                <motion.button
-                  key={mod.mode}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: index * 0.05, duration: 0.26 }}
-                  onClick={() => enterMode(mod.mode)}
-                  className="gateway-card group text-left rounded-xl p-4"
-                  style={
-                    {
-                      borderColor: `${mod.color}33`,
-                      "--module-color": mod.color,
-                      "--module-glow": mod.glow,
-                    } as CSSProperties
-                  }
-                >
-                  <div className="flex items-start justify-between gap-2 mb-3">
-                    <div className="p-1.5 rounded-lg bg-white/[0.03] group-hover:bg-white/[0.08] transition-colors">
-                      <PixelIcon mode={mod.mode} size={4} />
+            <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+              {quick.map((item, index) => {
+                const Icon = item.icon;
+                return (
+                  <motion.button
+                    key={item.mode}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    onClick={() => enterMode(item.mode)}
+                    className="rounded-2xl border bg-black/40 hover:bg-black/55 backdrop-blur-xl p-4 text-left transition-colors"
+                    style={{ borderColor: `${item.color}55` }}
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="w-9 h-9 rounded-lg border flex items-center justify-center" style={{ borderColor: `${item.color}99`, color: item.color }}>
+                        <Icon className="w-5 h-5" />
+                      </div>
+                      <span className="text-[10px] uppercase tracking-[0.14em] text-slate-300">mode</span>
                     </div>
-                    <span className="text-[10px] px-2 py-0.5 rounded border border-cyan-400/40 text-cyan-200">
-                      {locale === "zh-CN" ? "模式" : "MODE"}
-                    </span>
-                  </div>
-                  <span className="block font-tech text-xs tracking-[0.2em]" style={{ color: mod.color }}>
-                    {t(mod.labelKey)}
-                  </span>
-                  <p className="mt-1.5 text-[11px] text-slate-300/75 leading-relaxed">{t(mod.descKey)}</p>
-                </motion.button>
-              ))}
+                    <p className="mt-3 text-sm font-semibold" style={{ color: item.color }}>{t(`menu.${item.mode}`)}</p>
+                    <p className="mt-1 text-[11px] text-slate-300/80">{t(`menu.${item.mode}Desc`)}</p>
+                  </motion.button>
+                );
+              })}
             </div>
           </motion.div>
 
           <motion.div
-            initial={{ opacity: 0, y: 8 }}
+            initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.35, delay: 0.05 }}
-            className="space-y-4"
+            transition={{ delay: 0.05 }}
+            className="rounded-3xl border border-violet-300/28 bg-black/35 backdrop-blur-2xl p-5"
           >
-            <WisdomHall />
+            <p className="text-[11px] uppercase tracking-[0.18em] font-mono text-violet-100/95">{t("home.systemState")}</p>
+            <div className="mt-3 space-y-2">
+              {[
+                ["API", "LIVE"],
+                ["MEMORY", "REDIS + PG"],
+                ["GITHUB", "CONNECTED"],
+                ["VERSION", "2.2.0"],
+              ].map(([k, v]) => (
+                <div key={k} className="rounded-lg border border-white/12 bg-black/45 px-3 py-2 flex items-center justify-between text-[11px]">
+                  <span className="font-mono text-slate-200">{k}</span>
+                  <span className="font-mono text-cyan-200">{v}</span>
+                </div>
+              ))}
+            </div>
 
-            <div className="agora-panel rounded-2xl p-5 border border-violet-400/30">
-              <p className="font-tech text-[11px] uppercase tracking-[0.24em] text-violet-200/85">
-                {locale === "zh-CN" ? "终端维度" : "TERMINAL DIMENSIONS"}
+            <div className="mt-4 rounded-2xl border border-cyan-300/20 bg-cyan-500/8 p-4">
+              <p className="text-xs font-mono text-cyan-100 uppercase tracking-[0.14em]">{t("home.wisdomHall")}</p>
+              <p className="mt-2 text-[11px] text-slate-300/90 leading-relaxed">
+                {locale === "zh-CN"
+                  ? "苏格拉底、爱因斯坦、老子与佛陀作为智慧原型，映射五种工作模式。"
+                  : "Socrates, Einstein, Laozi, and Buddha serve as archetypes for the five workspace modes."}
               </p>
-              <div className="mt-3 space-y-2">
-                {[
-                  [locale === "zh-CN" ? "编程" : "CODING", "LIVE"],
-                  [locale === "zh-CN" ? "科研" : "RESEARCH", "LIVE"],
-                  [locale === "zh-CN" ? "推理" : "REASONING", "ALPHA"],
-                  [locale === "zh-CN" ? "进化" : "EVOLUTION", "LIVE"],
-                  [locale === "zh-CN" ? "创作" : "CREATION", "LIVE"],
-                ].map(([k, v]) => (
-                  <div key={k} className="module-divider rounded-md px-3 py-2 flex items-center justify-between">
-                    <span className="font-tech text-xs text-slate-200">{k}</span>
-                    <span className="text-xs text-cyan-200">{v}</span>
-                  </div>
-                ))}
-              </div>
             </div>
           </motion.div>
         </section>
@@ -171,7 +155,10 @@ export default function HomePage() {
         open={selectorOpen}
         currentMode={activeMode}
         onClose={() => setSelectorOpen(false)}
-        onSelect={enterMode}
+        onSelect={(mode) => {
+          setSelectorOpen(false);
+          enterMode(mode);
+        }}
       />
     </main>
   );
